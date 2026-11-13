@@ -1,12 +1,25 @@
 import json
+from pathlib import Path
 from typing import cast
 
 import pytest
 
 from app.infrastructure.database.models import Base
-from cms.apply_config import CONFIG_PATH, ConfigError, DirectusState, Json, plan
+from cms.apply_config import (
+    CONFIG_PATH,
+    MANAGED_FLOW_PREFIX,
+    ConfigError,
+    DirectusState,
+    Json,
+    flow_description,
+    load_config,
+    plan,
+)
 
-CONFIG = cast(Json, json.loads(CONFIG_PATH.read_text()))
+CONFIG = load_config()
+POLICIES = cast(dict[str, Json], CONFIG["policies"])
+ROLES = cast(dict[str, Json], CONFIG["roles"])
+FLOWS = cast(dict[str, Json], CONFIG["flows"])
 CONFIGURED_FIELDS = cast(dict[str, dict[str, Json]], CONFIG["fields"])
 HIDDEN_FIELDS = frozenset(cast(list[str], CONFIG["hidden_fields"]))
 HIDDEN_META: Json = {"hidden": True, "readonly": True}
@@ -44,6 +57,32 @@ def applied_state() -> DirectusState:
         },
         fields=fields,
         relations=relations,
+        policies={name: {"id": f"pol-{name}", **spec["meta"]} for name, spec in POLICIES.items()},
+        permissions=[
+            {
+                "id": f"perm-{name}-{collection}-{action}",
+                "policy": f"pol-{name}",
+                "collection": collection,
+                "action": action,
+                "fields": ["*"],
+                "permissions": None,
+            }
+            for name, spec in POLICIES.items()
+            for collection, actions in cast(dict[str, list[str]], spec["permissions"]).items()
+            for action in actions
+        ],
+        roles={
+            name: {
+                "id": f"role-{name}",
+                **spec["meta"],
+                "policies": [{"id": f"access-{policy}", "policy": f"pol-{policy}"} for policy in spec["policies"]],
+            }
+            for name, spec in ROLES.items()
+        },
+        flows={
+            name: {"id": f"flow-{name}", "description": flow_description(spec), "status": "active"}
+            for name, spec in FLOWS.items()
+        },
     )
 
 
@@ -115,3 +154,90 @@ def test_every_configured_field_exists_in_the_models() -> None:
         if spec.get("type") != "alias" and (collection, name) not in columns
     )
     assert unknown == []
+
+
+def test_plan_grants_missing_permission_and_revokes_permission_removed_from_config() -> None:
+    state = applied_state()
+    state.permissions[:] = [item for item in state.permissions if item["collection"] != "sources"]
+    state.permissions.append(
+        {
+            "id": "perm-extra",
+            "policy": "pol-Editor",
+            "collection": "directus_users",
+            "action": "update",
+            "fields": ["*"],
+            "permissions": None,
+        }
+    )
+
+    operations = plan(CONFIG, state)
+
+    assert sorted((op.method, op.path, op.body.get("collection"), op.body.get("action")) for op in operations) == [
+        ("DELETE", "/permissions/perm-extra", None, None),
+        ("POST", "/permissions", "sources", "create"),
+        ("POST", "/permissions", "sources", "delete"),
+        ("POST", "/permissions", "sources", "read"),
+        ("POST", "/permissions", "sources", "update"),
+    ]
+
+
+def test_plan_resets_permission_that_gained_a_row_filter() -> None:
+    state = applied_state()
+    restricted = next(item for item in state.permissions if item["collection"] == "entities")
+    restricted["permissions"] = {"status": {"_eq": "draft"}}
+
+    assert [(op.method, op.path) for op in plan(CONFIG, state)] == [("PATCH", f"/permissions/{restricted['id']}")]
+
+
+def test_plan_defers_role_until_its_policy_exists() -> None:
+    state = applied_state()
+    state.policies.clear()
+    state.permissions.clear()
+    state.roles.clear()
+
+    assert [(op.method, op.path) for op in plan(CONFIG, state)] == [("POST", "/policies")]
+
+
+def test_plan_recreates_flow_whose_definition_changed() -> None:
+    state = applied_state()
+    name = next(iter(FLOWS))
+    state.flows[name]["description"] = f"{MANAGED_FLOW_PREFIX} (000000000000). Não edite pelo painel."
+
+    operations = plan(CONFIG, state)
+
+    assert [(op.method, op.path) for op in operations] == [("DELETE", f"/flows/flow-{name}"), ("FLOW", "")]
+
+
+def test_plan_removes_managed_flow_dropped_from_config_but_keeps_flows_created_in_the_panel() -> None:
+    state = applied_state()
+    state.flows["Flow antigo"] = {"id": "flow-old", "description": f"{MANAGED_FLOW_PREFIX} (abc). Não edite."}
+    state.flows["Criado no painel"] = {"id": "flow-manual", "description": "feito à mão", "status": "active"}
+
+    assert [(op.method, op.path) for op in plan(CONFIG, state)] == [("DELETE", "/flows/flow-old")]
+
+
+def _write_config_with_flow(tmp_path: Path, flow: Json) -> Path:
+    config = cast(Json, json.loads(CONFIG_PATH.read_text()))
+    config["flows"] = {"Flow de teste": flow}
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config))
+    return path
+
+
+def test_load_config_rejects_filter_flow_that_would_overwrite_the_saved_payload(tmp_path: Path) -> None:
+    flow: Json = {"trigger": "event", "options": {"type": "filter", "return": "$last"}, "operations": []}
+
+    with pytest.raises(ConfigError, match=r"\$trigger\.payload"):
+        load_config(_write_config_with_flow(tmp_path, flow))
+
+
+def test_load_config_rejects_branch_pointing_backwards(tmp_path: Path) -> None:
+    operations: list[Json] = [
+        {"key": "first", "options": {}},
+        {"key": "second", "options": {}, "reject": "first"},
+    ]
+    options = {"type": "filter", "return": "$trigger.payload"}
+    flow: Json = {"trigger": "event", "options": options, "operations": operations}
+
+    with pytest.raises(ConfigError, match=r"second\.reject"):
+        load_config(_write_config_with_flow(tmp_path, flow))

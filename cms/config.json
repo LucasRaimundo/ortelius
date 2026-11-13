@@ -1136,5 +1136,220 @@
       "collection": "entities",
       "field": "cover_media"
     }
-  ]
+  ],
+  "policies": {
+    "Editor": {
+      "meta": {
+        "icon": "edit_note",
+        "description": "Cadastra e publica conteúdo. Sem acesso a configurações do sistema.",
+        "app_access": true,
+        "admin_access": false
+      },
+      "permissions": {
+        "entities": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "entity_aliases": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "entity_sections": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "entity_relations": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "relation_types": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "sources": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "entity_sources": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "directus_files": [
+          "create",
+          "read",
+          "update"
+        ],
+        "directus_folders": [
+          "read"
+        ]
+      }
+    }
+  },
+  "roles": {
+    "Editor": {
+      "meta": {
+        "icon": "edit_note",
+        "description": "Editores convidados do Atlas."
+      },
+      "policies": [
+        "Editor"
+      ]
+    }
+  },
+  "flows": {
+    "Validar publicação (nova entidade)": {
+      "trigger": "event",
+      "accountability": "all",
+      "options": {
+        "type": "filter",
+        "scope": [
+          "items.create"
+        ],
+        "collections": [
+          "entities"
+        ],
+        "return": "$trigger.payload"
+      },
+      "operations": [
+        {
+          "key": "decide",
+          "name": "Decidir",
+          "type": "exec",
+          "options": {
+            "code_file": "flows/publish_requires_source_on_create.js"
+          }
+        },
+        {
+          "key": "needs_block",
+          "name": "Precisa bloquear?",
+          "type": "condition",
+          "options": {
+            "filter": {
+              "$last": {
+                "block": {
+                  "_eq": true
+                }
+              }
+            }
+          },
+          "resolve": "block",
+          "reject": "allow"
+        },
+        {
+          "key": "block",
+          "name": "Bloquear publicação",
+          "type": "throw-error",
+          "resolve": null,
+          "options": {
+            "code": "FAILED_VALIDATION",
+            "status": "400",
+            "message": "Para publicar, cadastre ao menos uma fonte em Fontes."
+          }
+        },
+        {
+          "key": "allow",
+          "name": "Liberar",
+          "type": "transform",
+          "resolve": null,
+          "options": {
+            "json": {}
+          }
+        }
+      ]
+    },
+    "Validar publicação (entidade existente)": {
+      "trigger": "event",
+      "accountability": "all",
+      "options": {
+        "type": "filter",
+        "scope": [
+          "items.update"
+        ],
+        "collections": [
+          "entities"
+        ],
+        "return": "$trigger.payload"
+      },
+      "operations": [
+        {
+          "key": "current_citations",
+          "name": "Citações atuais",
+          "type": "item-read",
+          "options": {
+            "collection": "entity_sources",
+            "permissions": "$full",
+            "query": {
+              "filter": {
+                "entity_id": {
+                  "_in": "{{$trigger.keys}}"
+                }
+              },
+              "fields": [
+                "entity_id"
+              ],
+              "limit": -1
+            }
+          }
+        },
+        {
+          "key": "decide",
+          "name": "Decidir",
+          "type": "exec",
+          "options": {
+            "code_file": "flows/publish_requires_source_on_update.js"
+          }
+        },
+        {
+          "key": "needs_block",
+          "name": "Precisa bloquear?",
+          "type": "condition",
+          "options": {
+            "filter": {
+              "$last": {
+                "block": {
+                  "_eq": true
+                }
+              }
+            }
+          },
+          "resolve": "block",
+          "reject": "allow"
+        },
+        {
+          "key": "block",
+          "name": "Bloquear publicação",
+          "type": "throw-error",
+          "resolve": null,
+          "options": {
+            "code": "FAILED_VALIDATION",
+            "status": "400",
+            "message": "Para publicar, cadastre ao menos uma fonte em Fontes."
+          }
+        },
+        {
+          "key": "allow",
+          "name": "Liberar",
+          "type": "transform",
+          "resolve": null,
+          "options": {
+            "json": {}
+          }
+        }
+      ]
+    }
+  }
 }
