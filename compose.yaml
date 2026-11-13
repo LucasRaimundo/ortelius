@@ -38,7 +38,11 @@ services:
       # Tabelas do Directus no schema próprio; tabelas de domínio continuam em public (migration 0002).
       DB_SEARCH_PATH: directus,public
       PUBLIC_URL: http://localhost:8055
+      # No plano Core a licença exige telemetria e este valor é ignorado: o Directus envia contagens agregadas
+      # (sem conteúdo nem e-mails) a cada 6 horas. Vale se o plano mudar. Ver README.
       TELEMETRY: "false"
+      # Não envia e-mail e organização do dono do projeto, mesmo se alguém preencher o formulário no painel.
+      PROJECT_OWNER_ENABLED: "false"
     volumes:
       - directus_uploads:/directus/uploads
 
