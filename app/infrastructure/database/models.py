@@ -96,7 +96,10 @@ class EntitySectionRow(_Timestamps, Base):
         UniqueConstraint("entity_id", "section_key"),
         UniqueConstraint("entity_id", "position", deferrable=True, initially="DEFERRED"),
         CheckConstraint(f"section_key ~ '{KEY_PATTERN}'", name="section_key_format"),
-        CheckConstraint("jsonb_typeof(content) = 'array'", name="content_is_array"),
+        CheckConstraint(
+            "jsonb_typeof(content) = 'object' AND COALESCE(jsonb_typeof(content -> 'blocks'), '') = 'array'",
+            name="content_is_document",
+        ),
     )
 
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -104,7 +107,7 @@ class EntitySectionRow(_Timestamps, Base):
     section_key: Mapped[str] = mapped_column(String(80))
     title: Mapped[str] = mapped_column(String(180))
     position: Mapped[int] = mapped_column(Integer)
-    content: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
+    content: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("""'{"blocks": []}'::jsonb"""))
 
 
 class RelationTypeRow(_Timestamps, Base):

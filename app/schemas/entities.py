@@ -1,16 +1,48 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.domain.entities import EntityType, SourceType
 
 
-class ContentBlock(BaseModel):
-    """Bloco de conteúdo de uma seção. O formato de cada `type` é definido na fase editorial."""
+class TextRun(BaseModel):
+    """Trecho de texto com formatação uniforme. O frontend monta o texto a partir dos trechos, nunca de HTML."""
 
-    model_config = ConfigDict(extra="allow")
+    text: str
+    bold: bool
+    italic: bool
+    href: str | None = Field(description="Link http(s), quando o trecho é um link.")
 
-    type: str = Field(min_length=1)
+
+class HeadingBlock(BaseModel):
+    type: Literal["heading"]
+    level: Literal[3, 4] = Field(description="3 ou 4: o nível 1 é o nome da entidade e o 2, o título da seção.")
+    text: list[TextRun]
+
+
+class ParagraphBlock(BaseModel):
+    type: Literal["paragraph"]
+    text: list[TextRun]
+
+
+class ListItem(BaseModel):
+    text: list[TextRun]
+    items: list["ListItem"] = Field(description="Subitens, para listas aninhadas.")
+
+
+class ListBlock(BaseModel):
+    type: Literal["list"]
+    style: Literal["ordered", "unordered"]
+    items: list[ListItem]
+
+
+class QuoteBlock(BaseModel):
+    type: Literal["quote"]
+    text: list[TextRun]
+    caption: str | None = Field(description="Autor ou origem da citação, em texto puro.")
+
+
+ContentBlock = Annotated[HeadingBlock | ParagraphBlock | ListBlock | QuoteBlock, Field(discriminator="type")]
 
 
 class PointLocation(BaseModel):

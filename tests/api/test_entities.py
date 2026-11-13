@@ -14,8 +14,9 @@ def test_returns_published_entity_page(client: TestClient, db_session: Session) 
     roma = add_entity(db_session, "roma")
     roma.location = WKTElement("POINT(12.4964 41.9028)", srid=4326)
     db_session.add(EntityAliasRow(entity_id=roma.id, alias="Roma Aeterna", language_code="la"))
-    add_section(db_session, roma.id, "historia", 2, [{"type": "paragraph", "text": "Fundada..."}])
-    add_section(db_session, roma.id, "visao_geral", 1, [])
+    paragraph = {"type": "paragraph", "data": {"text": "Fundada por <b>Rômulo</b>, segundo a lenda."}}
+    add_section(db_session, roma.id, "historia", 2, {"time": 1, "version": "2.31.2", "blocks": [paragraph]})
+    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": []})
     db_session.flush()
 
     response = client.get("/v1/entities/roma")
@@ -24,7 +25,16 @@ def test_returns_published_entity_page(client: TestClient, db_session: Session) 
     body = response.json()
     assert body["location"] == {"type": "Point", "coordinates": [12.4964, 41.9028]}
     assert [s["section_key"] for s in body["sections"]] == ["visao_geral", "historia"]
-    assert body["sections"][1]["content"] == [{"type": "paragraph", "text": "Fundada..."}]
+    assert body["sections"][1]["content"] == [
+        {
+            "type": "paragraph",
+            "text": [
+                {"text": "Fundada por ", "bold": False, "italic": False, "href": None},
+                {"text": "Rômulo", "bold": True, "italic": False, "href": None},
+                {"text": ", segundo a lenda.", "bold": False, "italic": False, "href": None},
+            ],
+        }
+    ]
     assert [a["alias"] for a in body["aliases"]] == ["Roma Aeterna"]
     assert [s["title"] for s in body["sources"]] == ["Fonte de teste"]
 
@@ -80,15 +90,18 @@ def test_section_with_invalid_blocks_is_dropped_and_logged(
     client: TestClient, db_session: Session, caplog: pytest.LogCaptureFixture
 ) -> None:
     roma = add_entity(db_session, "roma")
-    add_section(db_session, roma.id, "visao_geral", 1, [{"type": "paragraph"}])
-    add_section(db_session, roma.id, "quebrada", 2, [{"text": "bloco sem type"}])
+    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": [{"type": "paragraph", "data": {"text": "ok"}}]})
+    image: dict[str, object] = {"type": "image", "data": {"file": {}}}
+    add_section(db_session, roma.id, "quebrada", 2, {"blocks": [image]})
 
     with caplog.at_level(logging.WARNING, logger="app.api.v1.entities"):
         response = client.get("/v1/entities/roma")
 
     assert response.status_code == 200
     assert [s["section_key"] for s in response.json()["sections"]] == ["visao_geral"]
-    assert [getattr(r, "section_key", None) for r in caplog.records] == ["quebrada"]
+    assert [(getattr(r, "section_key", None), getattr(r, "reason", None)) for r in caplog.records] == [
+        ("quebrada", "tipo de bloco não suportado: 'image'")
+    ]
 
 
 def test_database_unavailable_returns_503(client_without_database: TestClient) -> None:
@@ -96,3 +109,26 @@ def test_database_unavailable_returns_503(client_without_database: TestClient) -
 
     assert response.status_code == 503
     assert response.json() == {"detail": "serviço temporariamente indisponível"}
+
+
+def test_section_content_uses_typed_blocks_and_never_exposes_html(client: TestClient, db_session: Session) -> None:
+    roma = add_entity(db_session, "roma")
+    document: dict[str, object] = {
+        "blocks": [
+            {"type": "header", "data": {"text": "Fundação", "level": 2}},
+            {"type": "paragraph", "data": {"text": 'Ver <a href="javascript:alert(1)">isto</a><script>x()</script>.'}},
+            {"type": "nestedlist", "data": {"style": "ordered", "items": [{"content": "Reino", "items": []}]}},
+            {"type": "quote", "data": {"text": "Alea iacta est", "caption": "Suetônio"}},
+        ]
+    }
+    add_section(db_session, roma.id, "historia", 1, document)
+
+    content = client.get("/v1/entities/roma").json()["sections"][0]["content"]
+
+    assert [block["type"] for block in content] == ["heading", "paragraph", "list", "quote"]
+    assert content[0]["level"] == 3
+    assert [run["text"] for run in content[1]["text"]] == ["Ver isto."]
+    assert content[1]["text"][0]["href"] is None
+    plain = {"bold": False, "italic": False, "href": None}
+    assert content[2]["items"] == [{"text": [{"text": "Reino", **plain}], "items": []}]
+    assert content[3]["caption"] == "Suetônio"

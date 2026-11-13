@@ -500,7 +500,7 @@
       },
       "content": {
         "meta": {
-          "interface": "input-code",
+          "interface": "input-block-editor",
           "sort": 5,
           "width": "full",
           "required": false,
@@ -511,10 +511,15 @@
             }
           ],
           "hidden": false,
-          "note": "Provisório: o editor de blocos entra quando o formato dos blocos for definido.",
+          "note": "Títulos, parágrafos, listas e citações. Negrito, itálico e links são preservados; outras formatações são descartadas.",
           "options": {
-            "language": "JSON",
-            "lineNumber": true
+            "tools": [
+              "header",
+              "paragraph",
+              "nestedlist",
+              "quote"
+            ],
+            "placeholder": "Escreva a seção…"
           }
         }
       }
