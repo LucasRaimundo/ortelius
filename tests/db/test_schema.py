@@ -19,7 +19,7 @@ def test_migrations_match_models(db_engine: Engine) -> None:
 def test_rejects_publishing_entity_without_source(db_session: Session) -> None:
     add_entity(db_session, "roma", with_source=False)
 
-    with pytest.raises(IntegrityError, match="entidade publicada sem fonte"):
+    with pytest.raises(IntegrityError, match="Para publicar, cadastre ao menos uma fonte"):
         check_deferred_constraints(db_session)
 
 
@@ -35,7 +35,7 @@ def test_rejects_removing_last_source_of_published_entity(db_session: Session) -
     citation = cite(db_session, entity.id, add_source(db_session).id)
     check_deferred_constraints(db_session)
 
-    with pytest.raises(IntegrityError, match="entidade publicada sem fonte"):
+    with pytest.raises(IntegrityError, match="Para publicar, cadastre ao menos uma fonte"):
         db_session.delete(citation)
         db_session.flush()
 
