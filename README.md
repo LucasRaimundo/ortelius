@@ -15,7 +15,8 @@ uv run uvicorn app.main:create_app --factory --reload
 
 ## Verificar
 
-Os testes usam o PostGIS do `compose.yaml`.
+Os testes usam o PostGIS do `compose.yaml`. O CI (`.github/workflows/ci.yml`) roda a mesma verificação em todo
+PR para a `main`.
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest
