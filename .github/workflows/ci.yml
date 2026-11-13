@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # O nome deste job é o status check exigido pelo ruleset da main. Renomear exige atualizar o ruleset,
+  # senão todo PR fica esperando um check que nunca chega.
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      db:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: ortelius
+          POSTGRES_PASSWORD: ortelius
+          POSTGRES_DB: ortelius
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ortelius -d ortelius"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      # Credenciais de um banco efêmero que só existe dentro do job; não são segredos.
+      ORTELIUS_DATABASE_URL: postgresql+psycopg://ortelius:ortelius@localhost:5432/ortelius
+      ORTELIUS_CORS_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.7"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Formatação
+        run: uv run ruff format --check .
+
+      - name: Tipos
+        run: uv run pyright
+
+      - name: Testes
+        run: uv run pytest
