@@ -1,0 +1,40 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag existente para (re)gerar a release, ex.: v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Gerar notas
+        run: |
+          previous_tag="$(git tag --list 'v*' --sort=-version:refname | sed -n "/^${TAG}\$/{n;p;q}")"
+          scripts/release-notes.sh "$previous_tag" "$TAG" > notes.md
+          cat notes.md
+
+      - name: Criar ou atualizar release
+        run: |
+          prerelease=false
+          [[ "$TAG" == v0.* ]] && prerelease=true
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file notes.md --prerelease="$prerelease"
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file notes.md --verify-tag --prerelease="$prerelease"
+          fi
