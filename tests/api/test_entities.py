@@ -1,16 +1,16 @@
 import logging
 
 import pytest
+from fastapi.testclient import TestClient
 from geoalchemy2 import WKTElement
 from sqlalchemy.orm import Session
 
 from app.domain.entities import EntityType, PublicationStatus
 from app.infrastructure.database.models import EntityAliasRow
-from tests.conftest import ApiClient
 from tests.factories import add_entity, add_section, relate
 
 
-def test_returns_published_entity_page(client: ApiClient, db_session: Session) -> None:
+def test_returns_published_entity_page(client: TestClient, db_session: Session) -> None:
     roma = add_entity(db_session, "roma")
     roma.location = WKTElement("POINT(12.4964 41.9028)", srid=4326)
     db_session.add(EntityAliasRow(entity_id=roma.id, alias="Roma Aeterna", language_code="la"))
@@ -29,14 +29,14 @@ def test_returns_published_entity_page(client: ApiClient, db_session: Session) -
     assert [s["title"] for s in body["sources"]] == ["Fonte de teste"]
 
 
-def test_entity_without_location_has_null_location(client: ApiClient, db_session: Session) -> None:
+def test_entity_without_location_has_null_location(client: TestClient, db_session: Session) -> None:
     add_entity(db_session, "eneida", entity_type=EntityType.WORK)
 
     assert client.get("/v1/entities/eneida").json()["location"] is None
 
 
 @pytest.mark.parametrize("status", [PublicationStatus.DRAFT, PublicationStatus.ARCHIVED])
-def test_unpublished_entity_is_not_found(client: ApiClient, db_session: Session, status: PublicationStatus) -> None:
+def test_unpublished_entity_is_not_found(client: TestClient, db_session: Session, status: PublicationStatus) -> None:
     add_entity(db_session, "roma", status=status, with_source=False)
 
     response = client.get("/v1/entities/roma")
@@ -45,7 +45,7 @@ def test_unpublished_entity_is_not_found(client: ApiClient, db_session: Session,
     assert response.json() == {"detail": "entidade não encontrada"}
 
 
-def test_relations_are_visible_from_both_ends_with_oriented_labels(client: ApiClient, db_session: Session) -> None:
+def test_relations_are_visible_from_both_ends_with_oriented_labels(client: TestClient, db_session: Session) -> None:
     cesar = add_entity(db_session, "julio-cesar", entity_type=EntityType.PERSON)
     guerras = add_entity(db_session, "guerras-galicas", entity_type=EntityType.EVENT)
     pompeu = add_entity(db_session, "pompeu", entity_type=EntityType.PERSON)
@@ -68,7 +68,7 @@ def test_relations_are_visible_from_both_ends_with_oriented_labels(client: ApiCl
     ]
 
 
-def test_relations_to_unpublished_entities_are_hidden(client: ApiClient, db_session: Session) -> None:
+def test_relations_to_unpublished_entities_are_hidden(client: TestClient, db_session: Session) -> None:
     roma = add_entity(db_session, "roma")
     rascunho = add_entity(db_session, "cartago", status=PublicationStatus.DRAFT, with_source=False)
     relate(db_session, roma, rascunho, label="guerreou contra")
@@ -77,7 +77,7 @@ def test_relations_to_unpublished_entities_are_hidden(client: ApiClient, db_sess
 
 
 def test_section_with_invalid_blocks_is_dropped_and_logged(
-    client: ApiClient, db_session: Session, caplog: pytest.LogCaptureFixture
+    client: TestClient, db_session: Session, caplog: pytest.LogCaptureFixture
 ) -> None:
     roma = add_entity(db_session, "roma")
     add_section(db_session, roma.id, "visao_geral", 1, [{"type": "paragraph"}])
@@ -91,7 +91,7 @@ def test_section_with_invalid_blocks_is_dropped_and_logged(
     assert [getattr(r, "section_key", None) for r in caplog.records] == ["quebrada"]
 
 
-def test_database_unavailable_returns_503(client_without_database: ApiClient) -> None:
+def test_database_unavailable_returns_503(client_without_database: TestClient) -> None:
     response = client_without_database.get("/v1/entities/roma")
 
     assert response.status_code == 503
