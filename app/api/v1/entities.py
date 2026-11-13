@@ -2,29 +2,34 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
-from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
 
+from app.domain import content
 from app.domain.entities import EntityType, SourceType
 from app.infrastructure.database.engine import get_session
 from app.infrastructure.database.models import SLUG_PATTERN, EntitySectionRow
+from app.infrastructure.editorjs import to_blocks
 from app.repositories.entities import EntityRecord, RelationRecord, find_published_entity
 from app.schemas.entities import (
     Alias,
     ContentBlock,
     EntityDetail,
+    HeadingBlock,
+    ListBlock,
+    ListItem,
+    ParagraphBlock,
     PointLocation,
+    QuoteBlock,
     RelatedEntity,
     Relation,
     Section,
     Source,
+    TextRun,
 )
 from app.schemas.errors import ErrorResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/entities", tags=["entities"])
-
-_content_blocks = TypeAdapter(list[ContentBlock])
 
 
 @router.get(
@@ -88,14 +93,39 @@ def _to_detail(record: EntityRecord) -> EntityDetail:
 def _valid_section(entity_slug: str, row: EntitySectionRow) -> Section | None:
     """Uma seção com blocos inválidos é omitida para que o restante da página continue legível."""
     try:
-        content = _content_blocks.validate_python(row.content.get("blocks"))
-    except ValidationError as error:
+        blocks = to_blocks(row.content)
+    except content.InvalidContentError as error:
         logger.warning(
             "seção descartada por conteúdo inválido",
-            extra={"entity_slug": entity_slug, "section_key": row.section_key, "errors": error.errors()},
+            extra={"entity_slug": entity_slug, "section_key": row.section_key, "reason": str(error)},
         )
         return None
-    return Section(section_key=row.section_key, title=row.title, position=row.position, content=content)
+    return Section(
+        section_key=row.section_key,
+        title=row.title,
+        position=row.position,
+        content=[_to_content_block(block) for block in blocks],
+    )
+
+
+def _to_content_block(block: content.Block) -> ContentBlock:
+    match block:
+        case content.Heading(level=level, text=text):
+            return HeadingBlock(type="heading", level=level, text=_to_runs(text))
+        case content.Paragraph(text=text):
+            return ParagraphBlock(type="paragraph", text=_to_runs(text))
+        case content.BulletList(style=style, items=items):
+            return ListBlock(type="list", style=style, items=[_to_list_item(item) for item in items])
+        case content.Quote(text=text, caption=caption):
+            return QuoteBlock(type="quote", text=_to_runs(text), caption=caption)
+
+
+def _to_list_item(item: content.ListItem) -> ListItem:
+    return ListItem(text=_to_runs(item.text), items=[_to_list_item(child) for child in item.items])
+
+
+def _to_runs(text: content.RichText) -> list[TextRun]:
+    return [TextRun(text=run.text, bold=run.bold, italic=run.italic, href=run.href) for run in text]
 
 
 def _to_relation(record: RelationRecord) -> Relation:
