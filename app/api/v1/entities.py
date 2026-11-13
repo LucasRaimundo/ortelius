@@ -88,7 +88,7 @@ def _to_detail(record: EntityRecord) -> EntityDetail:
 def _valid_section(entity_slug: str, row: EntitySectionRow) -> Section | None:
     """Uma seção com blocos inválidos é omitida para que o restante da página continue legível."""
     try:
-        content = _content_blocks.validate_python(row.content)
+        content = _content_blocks.validate_python(row.content.get("blocks"))
     except ValidationError as error:
         logger.warning(
             "seção descartada por conteúdo inválido",

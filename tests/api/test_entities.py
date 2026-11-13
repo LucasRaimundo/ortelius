@@ -14,8 +14,8 @@ def test_returns_published_entity_page(client: TestClient, db_session: Session) 
     roma = add_entity(db_session, "roma")
     roma.location = WKTElement("POINT(12.4964 41.9028)", srid=4326)
     db_session.add(EntityAliasRow(entity_id=roma.id, alias="Roma Aeterna", language_code="la"))
-    add_section(db_session, roma.id, "historia", 2, [{"type": "paragraph", "text": "Fundada..."}])
-    add_section(db_session, roma.id, "visao_geral", 1, [])
+    add_section(db_session, roma.id, "historia", 2, {"blocks": [{"type": "paragraph", "text": "Fundada..."}]})
+    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": []})
     db_session.flush()
 
     response = client.get("/v1/entities/roma")
@@ -80,8 +80,8 @@ def test_section_with_invalid_blocks_is_dropped_and_logged(
     client: TestClient, db_session: Session, caplog: pytest.LogCaptureFixture
 ) -> None:
     roma = add_entity(db_session, "roma")
-    add_section(db_session, roma.id, "visao_geral", 1, [{"type": "paragraph"}])
-    add_section(db_session, roma.id, "quebrada", 2, [{"text": "bloco sem type"}])
+    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": [{"type": "paragraph"}]})
+    add_section(db_session, roma.id, "quebrada", 2, {"blocks": [{"text": "bloco sem type"}]})
 
     with caplog.at_level(logging.WARNING, logger="app.api.v1.entities"):
         response = client.get("/v1/entities/roma")
