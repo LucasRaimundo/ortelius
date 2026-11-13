@@ -19,5 +19,29 @@ services:
       timeout: 3s
       retries: 30
 
+  # Painel editorial. Sobe só com `docker compose --profile cms up`; ver README.
+  directus:
+    image: directus/directus:12.6.1
+    profiles: [cms]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8055:8055"
+    env_file: cms/.env
+    environment:
+      DB_CLIENT: pg
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: ortelius
+      DB_USER: directus
+      # Tabelas do Directus no schema próprio; tabelas de domínio continuam em public (migration 0002).
+      DB_SEARCH_PATH: directus,public
+      PUBLIC_URL: http://localhost:8055
+      TELEMETRY: "false"
+    volumes:
+      - directus_uploads:/directus/uploads
+
 volumes:
   pgdata:
+  directus_uploads:

@@ -13,6 +13,22 @@ uv run alembic upgrade head
 uv run uvicorn app.main:create_app --factory --reload
 ```
 
+## Painel editorial (Directus)
+
+O Directus guarda as próprias tabelas no schema `directus` e acessa as tabelas de domínio pelo papel
+`atlas_editor`, que só lê e escreve dados: ele não consegue criar, alterar nem apagar estrutura
+(migration `0002`). Para subir localmente, com o PostGIS rodando e as migrations aplicadas:
+
+```bash
+cp cms/.env.example cms/.env          # troque SECRET por um valor aleatório
+cms/create-dev-role.sh                # cria o usuário de login `directus`, membro de atlas_editor
+docker compose --profile cms up -d    # painel em http://localhost:8055
+```
+
+Em produção, o usuário `directus` é provisionado pela infraestrutura, com a senha no gerenciador de
+segredos. O usuário que roda as migrations precisa da permissão `CREATEROLE`, porque a `0002` cria o
+papel `atlas_editor`.
+
 ## Verificar
 
 Os testes usam o PostGIS do `compose.yaml`. O CI (`.github/workflows/ci.yml`) roda a mesma verificação em todo
