@@ -1,14 +1,19 @@
 from collections.abc import Iterator
+from typing import cast
 
+import httpx
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import Connection, Engine, make_url, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database.engine import create_db_engine
-from app.settings import get_settings
+from app.infrastructure.database.engine import create_db_engine, get_session
+from app.main import create_app
+from app.settings import Settings, get_settings
 
 TEST_DATABASE_NAME = "ortelius_test"
 
@@ -55,3 +60,33 @@ def db_session(db_engine: Engine) -> Iterator[Session]:
         with Session(bind=connection, join_transaction_mode="create_savepoint") as session:
             yield session
         transaction.rollback()
+
+
+def _test_settings(database_url: str) -> Settings:
+    return Settings(cors_allowed_origins=["http://localhost:3000"], database_url=SecretStr(database_url))
+
+
+class ApiClient:
+    """Starlette >= 1.10 tipa o TestClient pelo pacote httpx2; com httpx instalado, a resposta em runtime é
+    um httpx.Response, mas o pyright a vê como desconhecida. Este wrapper concentra o cast num só lugar."""
+
+    def __init__(self, test_client: TestClient) -> None:
+        self._test_client = test_client
+
+    def get(self, path: str) -> httpx.Response:
+        return cast(httpx.Response, self._test_client.get(path))  # pyright: ignore[reportUnknownMemberType]
+
+
+@pytest.fixture
+def client(db_session: Session) -> Iterator[ApiClient]:
+    app = create_app(_test_settings(db_session.get_bind().engine.url.render_as_string(hide_password=False)))
+    app.dependency_overrides[get_session] = lambda: db_session
+    with TestClient(app) as test_client:
+        yield ApiClient(test_client)
+
+
+@pytest.fixture
+def client_without_database() -> Iterator[ApiClient]:
+    app = create_app(_test_settings("postgresql+psycopg://ortelius:ortelius@127.0.0.1:1/ortelius"))
+    with TestClient(app) as test_client:
+        yield ApiClient(test_client)

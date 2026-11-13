@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from geoalchemy2 import Geometry, WKBElement
+from geoalchemy2 import Geometry, WKBElement, WKTElement
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
@@ -72,7 +72,7 @@ class EntityRow(_Timestamps, Base):
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(24), server_default=PublicationStatus.DRAFT.value)
     cover_media: Mapped[str | None] = mapped_column(Text)
-    location: Mapped[WKBElement | None] = mapped_column(
+    location: Mapped[WKBElement | WKTElement | None] = mapped_column(
         Geometry("POINT", srid=4326, spatial_index=False), nullable=True
     )
 
