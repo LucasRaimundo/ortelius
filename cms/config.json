@@ -1,0 +1,1140 @@
+{
+  "settings": {
+    "project_name": "Atlas — Painel editorial",
+    "default_language": "pt-BR",
+    "public_registration": false
+  },
+  "hidden_fields": [
+    "id",
+    "created_at",
+    "updated_at"
+  ],
+  "collections": {
+    "entities": {
+      "meta": {
+        "icon": "public",
+        "display_template": "{{name}}",
+        "hidden": false,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Entidades",
+            "singular": "Entidade",
+            "plural": "Entidades"
+          }
+        ],
+        "sort": 1,
+        "note": "Lugares, povos, pessoas, acontecimentos e obras com página própria no Atlas.",
+        "archive_field": "status",
+        "archive_value": "archived",
+        "unarchive_value": "draft",
+        "archive_app_filter": true
+      }
+    },
+    "sources": {
+      "meta": {
+        "icon": "menu_book",
+        "display_template": "{{title}}",
+        "hidden": false,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Fontes",
+            "singular": "Fonte",
+            "plural": "Fontes"
+          }
+        ],
+        "sort": 2,
+        "note": "Biblioteca Central: cada fonte é cadastrada uma vez e citada por várias entidades."
+      }
+    },
+    "relation_types": {
+      "meta": {
+        "icon": "share",
+        "display_template": "{{label}}",
+        "hidden": false,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Tipos de relação",
+            "singular": "Tipo de relação",
+            "plural": "Tipos de relação"
+          }
+        ],
+        "sort": 3,
+        "note": "Vocabulário das relações entre entidades (ex.: \"participou de\")."
+      }
+    },
+    "entity_aliases": {
+      "meta": {
+        "icon": "translate",
+        "display_template": "{{alias}}",
+        "hidden": true,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Nomes alternativos",
+            "singular": "Nome alternativo",
+            "plural": "Nomes alternativos"
+          }
+        ]
+      }
+    },
+    "entity_sections": {
+      "meta": {
+        "icon": "article",
+        "display_template": "{{title}}",
+        "hidden": true,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Seções",
+            "singular": "Seção",
+            "plural": "Seções"
+          }
+        ]
+      }
+    },
+    "entity_relations": {
+      "meta": {
+        "icon": "hub",
+        "display_template": "{{relation_type.label}} {{target_entity_id.name}}",
+        "hidden": true,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Relações",
+            "singular": "Relação",
+            "plural": "Relações"
+          }
+        ]
+      }
+    },
+    "entity_sources": {
+      "meta": {
+        "icon": "format_quote",
+        "display_template": "{{source_id.title}}",
+        "hidden": true,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Citações",
+            "singular": "Citação",
+            "plural": "Citações"
+          }
+        ]
+      }
+    },
+    "alembic_version": {
+      "meta": {
+        "hidden": true
+      }
+    }
+  },
+  "fields": {
+    "entities": {
+      "status": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Status"
+            }
+          ],
+          "hidden": false,
+          "note": "Só entidades publicadas aparecem no Atlas. Publicar exige ao menos uma fonte.",
+          "options": {
+            "choices": [
+              {
+                "text": "Rascunho",
+                "value": "draft"
+              },
+              {
+                "text": "Publicado",
+                "value": "published"
+              },
+              {
+                "text": "Arquivado",
+                "value": "archived"
+              }
+            ]
+          },
+          "display": "labels",
+          "display_options": {
+            "choices": [
+              {
+                "text": "Rascunho",
+                "value": "draft"
+              },
+              {
+                "text": "Publicado",
+                "value": "published"
+              },
+              {
+                "text": "Arquivado",
+                "value": "archived"
+              }
+            ]
+          }
+        }
+      },
+      "entity_type": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Tipo"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "choices": [
+              {
+                "text": "Lugar",
+                "value": "place"
+              },
+              {
+                "text": "Civilização",
+                "value": "civilization"
+              },
+              {
+                "text": "Estado ou império",
+                "value": "state"
+              },
+              {
+                "text": "Pessoa",
+                "value": "person"
+              },
+              {
+                "text": "Acontecimento",
+                "value": "event"
+              },
+              {
+                "text": "Cultura",
+                "value": "culture"
+              },
+              {
+                "text": "Obra",
+                "value": "work"
+              },
+              {
+                "text": "Conceito",
+                "value": "concept"
+              }
+            ]
+          }
+        }
+      },
+      "name": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Nome"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "slug": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Endereço (slug)"
+            }
+          ],
+          "hidden": false,
+          "note": "Usado na URL. Letras minúsculas sem acento, números e hífens (ex.: imperio-romano).",
+          "options": {
+            "slug": true
+          }
+        }
+      },
+      "summary": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 5,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Resumo"
+            }
+          ],
+          "hidden": false,
+          "note": "Uma ou duas frases. Aparece no cartão do globo e na busca."
+        }
+      },
+      "description": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 6,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Introdução"
+            }
+          ],
+          "hidden": false,
+          "note": "Apresentação geral no topo da página."
+        }
+      },
+      "cover_media": {
+        "meta": {
+          "interface": "file-image",
+          "sort": 7,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Imagem de capa"
+            }
+          ],
+          "hidden": false,
+          "note": "Registre a licença e a atribuição da imagem nas fontes.",
+          "special": [
+            "file"
+          ]
+        }
+      },
+      "location": {
+        "meta": {
+          "interface": "map",
+          "sort": 8,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Localização"
+            }
+          ],
+          "hidden": false,
+          "note": "Ponto do marcador no globo. Deixe vazio para entidades sem lugar físico (ex.: obras).",
+          "options": {
+            "geometryType": "Point"
+          }
+        }
+      },
+      "sections": {
+        "meta": {
+          "interface": "list-o2m",
+          "sort": 9,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Seções"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{position}}. {{title}}"
+          },
+          "special": [
+            "o2m"
+          ]
+        },
+        "type": "alias"
+      },
+      "relations": {
+        "meta": {
+          "interface": "list-o2m",
+          "sort": 10,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Relações"
+            }
+          ],
+          "hidden": false,
+          "note": "Relações a partir desta entidade. A relação também aparece na página da outra entidade.",
+          "options": {
+            "template": "{{relation_type.label}} → {{target_entity_id.name}}"
+          },
+          "special": [
+            "o2m"
+          ]
+        },
+        "type": "alias"
+      },
+      "aliases": {
+        "meta": {
+          "interface": "list-o2m",
+          "sort": 11,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Nomes alternativos"
+            }
+          ],
+          "hidden": false,
+          "note": "Nomes históricos, variantes e transliterações. Usados na busca.",
+          "options": {
+            "template": "{{alias}}"
+          },
+          "special": [
+            "o2m"
+          ]
+        },
+        "type": "alias"
+      },
+      "citations": {
+        "meta": {
+          "interface": "list-o2m",
+          "sort": 12,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Fontes"
+            }
+          ],
+          "hidden": false,
+          "note": "Ao menos uma fonte é obrigatória para publicar.",
+          "options": {
+            "template": "{{source_id.title}}"
+          },
+          "special": [
+            "o2m"
+          ]
+        },
+        "type": "alias"
+      }
+    },
+    "entity_sections": {
+      "entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Entidade"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          }
+        }
+      },
+      "title": {
+        "meta": {
+          "interface": "input",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Título"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "section_key": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Chave"
+            }
+          ],
+          "hidden": false,
+          "note": "Identificador estável para navegação. Minúsculas e sublinhado (ex.: visao_geral).",
+          "options": {
+            "slug": true
+          }
+        }
+      },
+      "position": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Ordem"
+            }
+          ],
+          "hidden": false,
+          "note": "Posição da seção na página (1, 2, 3...)."
+        }
+      },
+      "content": {
+        "meta": {
+          "interface": "input-code",
+          "sort": 5,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Conteúdo"
+            }
+          ],
+          "hidden": false,
+          "note": "Provisório: o editor de blocos entra quando o formato dos blocos for definido.",
+          "options": {
+            "language": "JSON",
+            "lineNumber": true
+          }
+        }
+      }
+    },
+    "entity_aliases": {
+      "entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Entidade"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          }
+        }
+      },
+      "alias": {
+        "meta": {
+          "interface": "input",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Nome"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "language_code": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Idioma"
+            }
+          ],
+          "hidden": false,
+          "note": "Código do idioma (ex.: la, grc, pt-BR)."
+        }
+      },
+      "alias_type": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Tipo de nome"
+            }
+          ],
+          "hidden": false,
+          "note": "Ex.: histórico, transliteração, exônimo."
+        }
+      },
+      "start_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 5,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Usado desde (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 44 a.C. = -43)."
+        }
+      },
+      "end_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 6,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Usado até (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 44 a.C. = -43)."
+        }
+      }
+    },
+    "relation_types": {
+      "key": {
+        "meta": {
+          "interface": "input",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Chave"
+            }
+          ],
+          "hidden": false,
+          "note": "Identificador estável. Minúsculas e sublinhado (ex.: participou_de).",
+          "options": {
+            "slug": true
+          }
+        }
+      },
+      "label": {
+        "meta": {
+          "interface": "input",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Rótulo"
+            }
+          ],
+          "hidden": false,
+          "note": "Lido a partir da origem (ex.: \"participou de\")."
+        }
+      },
+      "inverse_label": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Rótulo inverso"
+            }
+          ],
+          "hidden": false,
+          "note": "Lido a partir do destino (ex.: \"teve a participação de\"). Deixe vazio em relações sem direção."
+        }
+      }
+    },
+    "entity_relations": {
+      "source_entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Origem"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          }
+        }
+      },
+      "relation_type": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Tipo de relação"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{label}}"
+          }
+        }
+      },
+      "target_entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 3,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Destino"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          }
+        }
+      },
+      "is_directional": {
+        "meta": {
+          "interface": "boolean",
+          "sort": 4,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Tem direção"
+            }
+          ],
+          "hidden": false,
+          "note": "Desmarque para relações simétricas (ex.: \"aliado de\")."
+        }
+      },
+      "description": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 5,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Explicação"
+            }
+          ],
+          "hidden": false,
+          "note": "Por que essas entidades se relacionam."
+        }
+      },
+      "start_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 6,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Desde (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 44 a.C. = -43)."
+        }
+      },
+      "end_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 7,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Até (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 44 a.C. = -43)."
+        }
+      },
+      "position": {
+        "meta": {
+          "interface": "input",
+          "sort": 8,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Ordem"
+            }
+          ],
+          "hidden": false,
+          "note": "Ordem de exibição na página. Vazio vai para o fim."
+        }
+      }
+    },
+    "sources": {
+      "title": {
+        "meta": {
+          "interface": "input",
+          "sort": 1,
+          "width": "full",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Título"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "source_type": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Tipo"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "choices": [
+              {
+                "text": "Livro ou obra acadêmica",
+                "value": "book"
+              },
+              {
+                "text": "Artigo científico",
+                "value": "article"
+              },
+              {
+                "text": "Fonte primária",
+                "value": "primary_source"
+              },
+              {
+                "text": "Mapa ou documento cartográfico",
+                "value": "map"
+              },
+              {
+                "text": "Arquivo histórico",
+                "value": "archive"
+              },
+              {
+                "text": "Base de dados aberta",
+                "value": "dataset"
+              },
+              {
+                "text": "Reportagem ou publicação jornalística",
+                "value": "journalism"
+              }
+            ]
+          }
+        }
+      },
+      "author_or_institution": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Autor ou instituição"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "publication_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Ano de publicação"
+            }
+          ],
+          "hidden": false,
+          "note": "Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 44 a.C. = -43)."
+        }
+      },
+      "publisher_or_journal": {
+        "meta": {
+          "interface": "input",
+          "sort": 5,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Editora ou periódico"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "identifier": {
+        "meta": {
+          "interface": "input",
+          "sort": 6,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Identificador"
+            }
+          ],
+          "hidden": false,
+          "note": "ISBN, DOI ou outro identificador."
+        }
+      },
+      "url": {
+        "meta": {
+          "interface": "input",
+          "sort": 7,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Endereço eletrônico"
+            }
+          ],
+          "hidden": false
+        }
+      },
+      "language_code": {
+        "meta": {
+          "interface": "input",
+          "sort": 8,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Idioma"
+            }
+          ],
+          "hidden": false,
+          "note": "Código do idioma (ex.: pt-BR, en, la)."
+        }
+      },
+      "source_nature": {
+        "meta": {
+          "interface": "input",
+          "sort": 9,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Natureza"
+            }
+          ],
+          "hidden": false,
+          "note": "Ex.: primária, secundária, base, jornalística."
+        }
+      },
+      "license": {
+        "meta": {
+          "interface": "input",
+          "sort": 10,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Licença"
+            }
+          ],
+          "hidden": false,
+          "note": "Obrigatória para imagens e dados reutilizados."
+        }
+      },
+      "reliability_note": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 11,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Notas de confiabilidade"
+            }
+          ],
+          "hidden": false,
+          "note": "Limitações e cuidados no uso desta fonte."
+        }
+      }
+    },
+    "entity_sources": {
+      "entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 1,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Entidade"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          }
+        }
+      },
+      "source_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 2,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Fonte"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{title}}"
+          }
+        }
+      },
+      "contribution_type": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Papel da fonte"
+            }
+          ],
+          "hidden": false,
+          "note": "Ex.: fundamenta, contextualiza, fonte_primaria, imagem, mapa."
+        }
+      },
+      "locator": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Localização na fonte"
+            }
+          ],
+          "hidden": false,
+          "note": "Página, capítulo, folha ou URL específica."
+        }
+      },
+      "notes": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 5,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Observações"
+            }
+          ],
+          "hidden": false,
+          "note": "Como a fonte foi usada."
+        }
+      }
+    }
+  },
+  "relations": [
+    {
+      "collection": "entity_sections",
+      "field": "entity_id",
+      "meta": {
+        "one_field": "sections",
+        "sort_field": "position"
+      }
+    },
+    {
+      "collection": "entity_relations",
+      "field": "source_entity_id",
+      "meta": {
+        "one_field": "relations",
+        "sort_field": "position"
+      }
+    },
+    {
+      "collection": "entity_aliases",
+      "field": "entity_id",
+      "meta": {
+        "one_field": "aliases"
+      }
+    },
+    {
+      "collection": "entity_sources",
+      "field": "entity_id",
+      "meta": {
+        "one_field": "citations"
+      }
+    }
+  ],
+  "file_relations": [
+    {
+      "collection": "entities",
+      "field": "cover_media"
+    }
+  ]
+}

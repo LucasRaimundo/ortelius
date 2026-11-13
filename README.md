@@ -25,6 +25,18 @@ cms/create-dev-role.sh                # cria o usuário de login `directus`, mem
 docker compose --profile cms up -d    # painel em http://localhost:8055
 ```
 
+Configuração do painel (rótulos, campos, relações) vive em `cms/config.json` e é aplicada pela API do
+Directus, alterando só o que difere:
+
+```bash
+uv run python -m cms.apply_config --check   # mostra o que mudaria
+uv run python -m cms.apply_config           # aplica
+```
+
+Toda coluna de domínio precisa estar configurada em `cms/config.json` (ou na lista `hidden_fields`); um
+teste falha caso contrário. Fora do ambiente local, o applier usa `DIRECTUS_URL`, `DIRECTUS_TOKEN` e
+`DIRECTUS_DB_URL`.
+
 Em produção, o usuário `directus` é provisionado pela infraestrutura, com a senha no gerenciador de
 segredos. O usuário que roda as migrations precisa da permissão `CREATEROLE`, porque a `0002` cria o
 papel `atlas_editor`.
