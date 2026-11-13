@@ -1,0 +1,38 @@
+[project]
+name = "ortelius"
+version = "0.1.0"
+description = "Backend do Atlas"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162",
+    "uvicorn[standard]>=0.54",
+    "pydantic>=2.14",
+    "pydantic-settings>=2.16",
+    "sqlalchemy>=2.1",
+    "psycopg[binary]>=3.3",
+    "geoalchemy2>=0.21",
+    "alembic>=1.20",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16",
+    "pyright>=1.1.414",
+    "pytest>=9.2",
+    "ruff>=0.17",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pyright]
+include = ["app", "tests"]
+typeCheckingMode = "strict"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
