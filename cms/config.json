@@ -264,7 +264,17 @@
           "note": "Usado na URL. Letras minúsculas sem acento, números e hífens (ex.: imperio-romano).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "slug": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: imperio-romano)."
         }
       },
       "summary": {
@@ -476,10 +486,20 @@
             }
           ],
           "hidden": false,
-          "note": "Identificador estável para navegação. Minúsculas e sublinhado (ex.: visao_geral).",
+          "note": "Identificador estável para navegação. Letras minúsculas sem acento, números e hífens (ex.: visao-geral).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "section_key": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: visao-geral)."
         }
       },
       "position": {
@@ -637,10 +657,20 @@
             }
           ],
           "hidden": false,
-          "note": "Identificador estável. Minúsculas e sublinhado (ex.: participou_de).",
+          "note": "Identificador estável. Letras minúsculas sem acento, números e hífens (ex.: participou-de).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "key": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: participou-de)."
         }
       },
       "label": {

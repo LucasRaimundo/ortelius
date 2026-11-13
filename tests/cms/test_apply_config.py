@@ -3,8 +3,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from sqlalchemy import CheckConstraint
 
-from app.infrastructure.database.models import Base
+from app.infrastructure.database.models import SLUG_PATTERN, Base
 from cms.apply_config import (
     CONFIG_PATH,
     MANAGED_FLOW_PREFIX,
@@ -241,3 +242,27 @@ def test_load_config_rejects_branch_pointing_backwards(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError, match=r"second\.reject"):
         load_config(_write_config_with_flow(tmp_path, flow))
+
+
+def test_panel_slug_fields_produce_what_the_database_accepts() -> None:
+    """O painel converte o texto em slug com hífen; o CHECK e a validação do campo precisam aceitar esse formato."""
+    slug_fields = [
+        (collection, name, spec["meta"])
+        for collection, specs in CONFIGURED_FIELDS.items()
+        for name, spec in specs.items()
+        if spec["meta"].get("options", {}).get("slug")
+    ]
+    checks = {
+        table.name: [str(item.sqltext) for item in table.constraints if isinstance(item, CheckConstraint)]
+        for table in Base.metadata.sorted_tables
+    }
+
+    mismatched = [
+        f"{collection}.{name}"
+        for collection, name, meta in slug_fields
+        if f"{name} ~ '{SLUG_PATTERN}'" not in checks[collection]
+        or meta.get("validation") != {"_and": [{name: {"_regex": SLUG_PATTERN}}]}
+    ]
+
+    assert slug_fields
+    assert mismatched == []

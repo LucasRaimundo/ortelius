@@ -38,7 +38,6 @@ def _in_list(column: str, values: type[StrEnum]) -> str:
 
 
 SLUG_PATTERN = "^[a-z0-9]+(-[a-z0-9]+)*$"
-KEY_PATTERN = "^[a-z0-9]+(_[a-z0-9]+)*$"
 
 
 class Base(DeclarativeBase):
@@ -95,7 +94,7 @@ class EntitySectionRow(_Timestamps, Base):
     __table_args__ = (
         UniqueConstraint("entity_id", "section_key"),
         UniqueConstraint("entity_id", "position", deferrable=True, initially="DEFERRED"),
-        CheckConstraint(f"section_key ~ '{KEY_PATTERN}'", name="section_key_format"),
+        CheckConstraint(f"section_key ~ '{SLUG_PATTERN}'", name="section_key_format"),
         CheckConstraint(
             "jsonb_typeof(content) = 'object' AND COALESCE(jsonb_typeof(content -> 'blocks'), '') = 'array'",
             name="content_is_document",
@@ -112,7 +111,7 @@ class EntitySectionRow(_Timestamps, Base):
 
 class RelationTypeRow(_Timestamps, Base):
     __tablename__ = "relation_types"
-    __table_args__ = (CheckConstraint(f"key ~ '{KEY_PATTERN}'", name="key_format"),)
+    __table_args__ = (CheckConstraint(f"key ~ '{SLUG_PATTERN}'", name="key_format"),)
 
     key: Mapped[str] = mapped_column(String(60), primary_key=True)
     label: Mapped[str] = mapped_column(String(120))

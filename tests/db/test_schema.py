@@ -57,7 +57,7 @@ def test_rejects_section_content_that_is_not_a_block_document(db_session: Sessio
     entity = add_entity(db_session, "roma")
 
     with pytest.raises(IntegrityError, match="ck_entity_sections_content_is_document"):
-        add_section(db_session, entity.id, "visao_geral", 1, content)
+        add_section(db_session, entity.id, "visao-geral", 1, content)
 
 
 def test_accepts_block_editor_document(db_session: Session) -> None:
@@ -65,4 +65,4 @@ def test_accepts_block_editor_document(db_session: Session) -> None:
     block: dict[str, object] = {"id": "a1", "type": "paragraph", "data": {}}
     document: dict[str, object] = {"time": 1794596350781, "version": "2.31.2", "blocks": [block]}
 
-    assert add_section(db_session, entity.id, "visao_geral", 1, document).content == document
+    assert add_section(db_session, entity.id, "visao-geral", 1, document).content == document
