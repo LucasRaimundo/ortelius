@@ -9,6 +9,10 @@ dependencies = [
     "uvicorn[standard]>=0.54",
     "pydantic>=2.14",
     "pydantic-settings>=2.16",
+    "sqlalchemy>=2.1",
+    "psycopg[binary]>=3.3",
+    "geoalchemy2>=0.21",
+    "alembic>=1.20",
 ]
 
 [dependency-groups]
