@@ -1,0 +1,57 @@
+from collections.abc import Iterator
+
+import pytest
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import Connection, Engine, make_url, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
+
+from app.infrastructure.database.engine import create_db_engine
+from app.settings import get_settings
+
+TEST_DATABASE_NAME = "ortelius_test"
+
+
+def _run_alembic(connection: Connection, *, downgrade: bool = False) -> None:
+    config = Config("alembic.ini")
+    config.attributes["connection"] = connection
+    config.attributes["configure_logger"] = False
+    if downgrade:
+        command.downgrade(config, "base")
+    else:
+        command.upgrade(config, "head")
+
+
+def _recreate_test_database() -> str:
+    admin_url = make_url(get_settings().database_url.get_secret_value())
+    admin_engine = create_db_engine(admin_url.render_as_string(hide_password=False))
+    try:
+        with admin_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
+            connection.execute(text(f"DROP DATABASE IF EXISTS {TEST_DATABASE_NAME} WITH (FORCE)"))
+            connection.execute(text(f"CREATE DATABASE {TEST_DATABASE_NAME}"))
+    except OperationalError as error:
+        pytest.exit(f"PostGIS indisponível. Rode `docker compose up -d --wait`.\n{error}", returncode=1)
+    finally:
+        admin_engine.dispose()
+    return admin_url.set(database=TEST_DATABASE_NAME).render_as_string(hide_password=False)
+
+
+@pytest.fixture(scope="session")
+def db_engine() -> Iterator[Engine]:
+    engine = create_db_engine(_recreate_test_database())
+    with engine.begin() as connection:
+        _run_alembic(connection)
+        _run_alembic(connection, downgrade=True)
+        _run_alembic(connection)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine: Engine) -> Iterator[Session]:
+    with db_engine.connect() as connection:
+        transaction = connection.begin()
+        with Session(bind=connection, join_transaction_mode="create_savepoint") as session:
+            yield session
+        transaction.rollback()

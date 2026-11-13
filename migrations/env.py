@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import Connection
 
 from app.infrastructure.database.engine import create_db_engine
-from app.infrastructure.database.models import Base
+from app.infrastructure.database.models import Base, is_domain_object
 from app.settings import get_settings
 
 config = context.config
@@ -13,7 +13,7 @@ if config.config_file_name is not None and config.attributes.get("configure_logg
 
 
 def run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=Base.metadata)
+    context.configure(connection=connection, target_metadata=Base.metadata, include_name=is_domain_object)
     with context.begin_transaction():
         context.run_migrations()
 

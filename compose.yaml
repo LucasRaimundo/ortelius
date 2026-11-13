@@ -10,6 +10,9 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Desliga o init da imagem, que instala postgis_topology e tiger_geocoder; as extensões
+      # pertencem às migrations, como em produção.
+      - /dev/null:/docker-entrypoint-initdb.d/10_postgis.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ortelius -d ortelius"]
       interval: 2s
