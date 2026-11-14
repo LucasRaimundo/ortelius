@@ -67,7 +67,7 @@ def relate(
     inverse_label: str | None = None,
     is_directional: bool = True,
 ) -> EntityRelationRow:
-    key = label.replace(" ", "_")
+    key = label.replace(" ", "-")
     if session.get(RelationTypeRow, key) is None:
         session.add(RelationTypeRow(key=key, label=label, inverse_label=inverse_label))
         session.flush()

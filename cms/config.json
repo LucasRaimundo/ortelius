@@ -264,7 +264,17 @@
           "note": "Usado na URL. Letras minúsculas sem acento, números e hífens (ex.: imperio-romano).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "slug": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: imperio-romano)."
         }
       },
       "summary": {
@@ -374,7 +384,8 @@
           "hidden": false,
           "note": "Relações a partir desta entidade. A relação também aparece na página da outra entidade.",
           "options": {
-            "template": "{{relation_type.label}} → {{target_entity_id.name}}"
+            "template": "{{relation_type.label}} → {{target_entity_id.name}}",
+            "enableSelect": false
           },
           "special": [
             "o2m"
@@ -407,7 +418,7 @@
       },
       "citations": {
         "meta": {
-          "interface": "list-o2m",
+          "interface": "list-m2m",
           "sort": 12,
           "width": "full",
           "required": false,
@@ -418,12 +429,14 @@
             }
           ],
           "hidden": false,
-          "note": "Ao menos uma fonte é obrigatória para publicar.",
+          "note": "Ao menos uma fonte é obrigatória para publicar. Em \"Adicionar existente\", escolha da Biblioteca Central; clique na fonte para ajustar o papel e a página.",
           "options": {
-            "template": "{{source_id.title}}"
+            "template": "{{source_id.title}}",
+            "enableCreate": true,
+            "enableSelect": true
           },
           "special": [
-            "o2m"
+            "m2m"
           ]
         },
         "type": "alias"
@@ -476,10 +489,20 @@
             }
           ],
           "hidden": false,
-          "note": "Identificador estável para navegação. Minúsculas e sublinhado (ex.: visao_geral).",
+          "note": "Identificador estável para navegação. Letras minúsculas sem acento, números e hífens (ex.: visao-geral).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "section_key": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: visao-geral)."
         }
       },
       "position": {
@@ -637,10 +660,20 @@
             }
           ],
           "hidden": false,
-          "note": "Identificador estável. Minúsculas e sublinhado (ex.: participou_de).",
+          "note": "Identificador estável. Letras minúsculas sem acento, números e hífens (ex.: participou-de).",
           "options": {
             "slug": true
-          }
+          },
+          "validation": {
+            "_and": [
+              {
+                "key": {
+                  "_regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use só letras minúsculas sem acento, números e hífens (ex.: participou-de)."
         }
       },
       "label": {
@@ -1110,7 +1143,8 @@
       "field": "entity_id",
       "meta": {
         "one_field": "sections",
-        "sort_field": "position"
+        "sort_field": "position",
+        "one_deselect_action": "delete"
       }
     },
     {
@@ -1118,21 +1152,33 @@
       "field": "source_entity_id",
       "meta": {
         "one_field": "relations",
-        "sort_field": "position"
+        "sort_field": "position",
+        "one_deselect_action": "delete"
       }
     },
     {
       "collection": "entity_aliases",
       "field": "entity_id",
       "meta": {
-        "one_field": "aliases"
+        "one_field": "aliases",
+        "one_deselect_action": "delete"
       }
     },
     {
       "collection": "entity_sources",
       "field": "entity_id",
       "meta": {
-        "one_field": "citations"
+        "one_field": "citations",
+        "one_deselect_action": "delete",
+        "junction_field": "source_id"
+      }
+    },
+    {
+      "collection": "entity_sources",
+      "field": "source_id",
+      "meta": {
+        "junction_field": "entity_id",
+        "one_field": null
       }
     }
   ],

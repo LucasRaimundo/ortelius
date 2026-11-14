@@ -16,7 +16,7 @@ def test_returns_published_entity_page(client: TestClient, db_session: Session) 
     db_session.add(EntityAliasRow(entity_id=roma.id, alias="Roma Aeterna", language_code="la"))
     paragraph = {"type": "paragraph", "data": {"text": "Fundada por <b>Rômulo</b>, segundo a lenda."}}
     add_section(db_session, roma.id, "historia", 2, {"time": 1, "version": "2.31.2", "blocks": [paragraph]})
-    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": []})
+    add_section(db_session, roma.id, "visao-geral", 1, {"blocks": []})
     db_session.flush()
 
     response = client.get("/v1/entities/roma")
@@ -24,7 +24,7 @@ def test_returns_published_entity_page(client: TestClient, db_session: Session) 
     assert response.status_code == 200
     body = response.json()
     assert body["location"] == {"type": "Point", "coordinates": [12.4964, 41.9028]}
-    assert [s["section_key"] for s in body["sections"]] == ["visao_geral", "historia"]
+    assert [s["section_key"] for s in body["sections"]] == ["visao-geral", "historia"]
     assert body["sections"][1]["content"] == [
         {
             "type": "paragraph",
@@ -90,7 +90,7 @@ def test_section_with_invalid_blocks_is_dropped_and_logged(
     client: TestClient, db_session: Session, caplog: pytest.LogCaptureFixture
 ) -> None:
     roma = add_entity(db_session, "roma")
-    add_section(db_session, roma.id, "visao_geral", 1, {"blocks": [{"type": "paragraph", "data": {"text": "ok"}}]})
+    add_section(db_session, roma.id, "visao-geral", 1, {"blocks": [{"type": "paragraph", "data": {"text": "ok"}}]})
     image: dict[str, object] = {"type": "image", "data": {"file": {}}}
     add_section(db_session, roma.id, "quebrada", 2, {"blocks": [image]})
 
@@ -98,7 +98,7 @@ def test_section_with_invalid_blocks_is_dropped_and_logged(
         response = client.get("/v1/entities/roma")
 
     assert response.status_code == 200
-    assert [s["section_key"] for s in response.json()["sections"]] == ["visao_geral"]
+    assert [s["section_key"] for s in response.json()["sections"]] == ["visao-geral"]
     assert [(getattr(r, "section_key", None), getattr(r, "reason", None)) for r in caplog.records] == [
         ("quebrada", "tipo de bloco não suportado: 'image'")
     ]
