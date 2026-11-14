@@ -168,7 +168,7 @@ class EntitySourceRow(_Timestamps, Base):
     id: Mapped[uuid.UUID] = _uuid_pk()
     entity_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("entities.id", ondelete="CASCADE"), index=True)
     source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sources.id", ondelete="RESTRICT"), index=True)
-    contribution_type: Mapped[str] = mapped_column(String(48))
+    contribution_type: Mapped[str] = mapped_column(String(48), server_default="fundamenta")
     locator: Mapped[str | None] = mapped_column(String(500))
     notes: Mapped[str | None] = mapped_column(Text)
 
