@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     cors_allowed_origins: list[str] = Field(min_length=1)
     database_url: SecretStr
+    gemini_api_key: SecretStr | None = None
+    draft_model: str = "gemini-flash-latest"
 
 
 @lru_cache

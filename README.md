@@ -77,6 +77,29 @@ uv run python -m pipeline.wikidata Q123 --tipo concept  # quando o P31 do item n
   `pipeline/wikidata/mapping.py`. Datas da entidade ainda não são importadas (dependem do modelo de período da
   fase 6).
 
+## Gerar texto a partir das fontes
+
+Escreve resumo, introdução e seções de um rascunho com o Gemini (camada gratuita do Google AI Studio), a partir
+do texto das fontes citadas. Precisa de `ORTELIUS_GEMINI_API_KEY` no `.env`; o modelo vem de
+`ORTELIUS_DRAFT_MODEL`.
+
+```bash
+uv run python -m pipeline.texto augusto batalha-de-alesia
+uv run python -m pipeline.texto augusto --substituir   # apaga introdução e seções e gera de novo
+```
+
+- O modelo só lê fontes com **licença do texto** aberta (domínio público, CC0, CC BY): o trecho colado na
+  citação ou, sem ele, o endereço do texto, que precisa ser do Perseus, LacusCurtius, Wikisource ou Project
+  Gutenberg. Citações sem texto utilizável (ex.: Wikidata) são ignoradas e listadas na origem do rascunho.
+- Fontes acima de 600 mil caracteres no total não são cortadas: o comando falha e pede o endereço de um livro ou
+  capítulo, ou um trecho colado.
+- Só entidades em rascunho. Com introdução ou seções já escritas, só gera com `--substituir`. O resumo é sempre
+  substituído; o anterior fica na origem do rascunho.
+- A resposta passa pela mesma validação da API antes de gravar. A origem do rascunho registra modelo, fontes
+  lidas (endereço e hash), fontes usadas por seção, tokens e os **pontos a conferir**.
+- O texto gerado pode afirmar o que as fontes não dizem, inclusive fora dos pontos a conferir. Confira cada data,
+  nome e afirmação contra as fontes antes de publicar.
+
 ## Verificar
 
 Os testes usam o PostGIS do `compose.yaml`. O CI (`.github/workflows/ci.yml`) roda a mesma verificação em todo

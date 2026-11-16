@@ -1065,10 +1065,11 @@
           "translations": [
             {
               "language": "pt-BR",
-              "translation": "Endereço eletrônico"
+              "translation": "Link de referência"
             }
           ],
-          "hidden": false
+          "hidden": false,
+          "note": "Página da obra ou do catálogo, exibida com a fonte. O pipeline não lê este link: para gerar texto, use \"Endereço do texto (lido pelo pipeline)\"."
         }
       },
       "language_code": {
@@ -1144,7 +1145,7 @@
           "translations": [
             {
               "language": "pt-BR",
-              "translation": "Endereço do texto"
+              "translation": "Endereço do texto (lido pelo pipeline)"
             }
           ],
           "hidden": false,
