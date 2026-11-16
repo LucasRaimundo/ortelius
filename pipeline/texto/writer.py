@@ -42,10 +42,17 @@ def generate_text(
     drafter: TextDrafter,
     fetch_text: Callable[[str], str],
     replace: bool = False,
+    progress: Callable[[str], None] = lambda message: None,
 ) -> str:
     with session_factory() as session:
         target = _target(session, slug, replace=replace)
+    progress(f"lendo {len(target.citations)} fonte(s) citada(s)")
     gathered = gather_sources(target.citations, fetch_text)
+    characters = sum(len(source.text) for source in gathered.texts)
+    progress(
+        f"gerando com {drafter.model} a partir de {len(gathered.texts)} fonte(s), {characters} caracteres; "
+        "pode levar alguns minutos"
+    )
     reply = drafter.draft(DraftRequest(target.name, target.entity_type, gathered.texts))
     draft = parse_draft(reply.payload, {source.label for source in gathered.texts})
     with session_factory() as session, session.begin():

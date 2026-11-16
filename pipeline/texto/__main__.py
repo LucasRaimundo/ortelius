@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
                     drafter=drafter,
                     fetch_text=SourceFetcher(source_http).fetch_text,
                     replace=args.substituir,
+                    progress=lambda step, slug=slug: print(f"...        {slug}: {step}", flush=True),
                 )
                 print(f"gerado     {slug}: {message}")
             except (TextRefusedError, SourceTextError, DraftingError, InvalidDraftError) as error:

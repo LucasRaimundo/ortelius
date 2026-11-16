@@ -81,8 +81,9 @@ def test_writes_the_draft_and_records_where_it_came_from(
     db_session: Session, session_factory: Callable[[], Session], augusto: EntityRow
 ) -> None:
     drafter = FakeDrafter()
+    steps: list[str] = []
 
-    message = generate(session_factory, drafter)
+    message = generate(session_factory, drafter, progress=steps.append)
 
     db_session.refresh(augusto)
     [request] = drafter.requests
@@ -90,6 +91,10 @@ def test_writes_the_draft_and_records_where_it_came_from(
         ("F1", "Suetônio, Vida de Augusto", "Augustus was born at Rome.")
     ]
     assert message == "2 seção(ões), 2 ponto(s) a conferir"
+    assert steps == [
+        "lendo 2 fonte(s) citada(s)",
+        "gerando com gemini-flash-latest a partir de 1 fonte(s), 26 caracteres; pode levar alguns minutos",
+    ]
     assert (augusto.summary, augusto.description) == (ANSWER["summary"], ANSWER["description"])
     written = sections(db_session, augusto)
     assert [(s.section_key, s.title, s.position) for s in written] == [
