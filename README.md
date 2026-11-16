@@ -1,7 +1,7 @@
 # Ortelius
 
-Backend do Atlas: API, domínio, PostGIS e pipeline geográfico. Visão, arquitetura e especificações ficam no
-repositório `oAtlas` (`CORE.md`, `ARCH.md`, `docs/projects/`).
+Backend do Atlas: API, domínio, PostGIS, painel editorial e pipeline de ingestão. Visão, arquitetura e
+especificações ficam no repositório `oAtlas` (`CORE.md`, `ARCH.md`, `docs/projects/`).
 
 ## Rodar
 
@@ -53,6 +53,29 @@ teste falha caso contrário. Fora do ambiente local, o applier usa `DIRECTUS_URL
 Em produção, o usuário `directus` é provisionado pela infraestrutura, com a senha no gerenciador de
 segredos. O usuário que roda as migrations precisa da permissão `CREATEROLE`, porque a `0002` cria o
 papel `atlas_editor`.
+
+## Importar do Wikidata
+
+Cria rascunhos a partir de itens do Wikidata (CC0), com o banco rodando e as migrations aplicadas:
+
+```bash
+uv run python -m pipeline.wikidata Q1405 Q131386       # Augusto e Batalha de Alésia
+uv run python -m pipeline.wikidata Q60220 --slug eneida-de-virgilio
+uv run python -m pipeline.wikidata Q123 --tipo concept  # quando o P31 do item não indica o tipo
+```
+
+- Traz nome, tipo, resumo curto, localização, nomes alternativos (rótulos em vários idiomas e aliases em
+  português) e relações com entidades que **já existem** no Atlas, ligadas pelo campo "Código no Wikidata".
+  Preencha esse código nas entidades cadastradas à mão para que as novas se liguem a elas.
+- Tudo nasce em rascunho, citando a fonte Wikidata. A lista "Origem do rascunho" da entidade mostra o que veio,
+  os pontos a conferir e as relações cujo alvo ainda não está no Atlas.
+- Rodar de novo num rascunho só completa campos vazios e acrescenta o que falta: edições do revisor ficam.
+  Entidades publicadas ou arquivadas nunca são alteradas.
+- Cada item é gravado numa transação. Falha num item (rede, tipo desconhecido, endereço já usado) não grava
+  nada dele e não interrompe os demais; o comando termina com código 1 e diz o motivo de cada falha.
+- O tipo vem de uma tabela de valores de P31 e as relações de uma tabela de propriedades, ambas em
+  `pipeline/wikidata/mapping.py`. Datas da entidade ainda não são importadas (dependem do modelo de período da
+  fase 6).
 
 ## Verificar
 

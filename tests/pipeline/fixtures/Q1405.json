@@ -1,0 +1,440 @@
+{
+ "entities": {
+  "Q1405": {
+   "type": "item",
+   "id": "Q1405",
+   "lastrevid": 2568559129,
+   "labels": {
+    "it": {
+     "language": "it",
+     "value": "Augusto"
+    },
+    "en": {
+     "language": "en",
+     "value": "Augustus"
+    },
+    "de": {
+     "language": "de",
+     "value": "Augustus"
+    },
+    "fr": {
+     "language": "fr",
+     "value": "Auguste"
+    },
+    "el": {
+     "language": "el",
+     "value": "Οκταβιανός Αύγουστος"
+    },
+    "es": {
+     "language": "es",
+     "value": "Augusto"
+    },
+    "la": {
+     "language": "la",
+     "value": "Augustus"
+    },
+    "pt": {
+     "language": "pt",
+     "value": "Augusto"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "first emperor of the Roman Empire and founder of the Julio-Claudian dynasty"
+    },
+    "pt": {
+     "language": "pt",
+     "value": "primeiro imperador romano (27 a.C.–14 d.C.)"
+    }
+   },
+   "aliases": {
+    "it": [
+     {
+      "language": "it",
+      "value": "Gaio Cesare Ottaviano Augusto"
+     },
+     {
+      "language": "it",
+      "value": "Caio Giulio Cesare Ottaviano Augusto"
+     },
+     {
+      "language": "it",
+      "value": "Ottaviano Augusto"
+     },
+     {
+      "language": "it",
+      "value": "Gaio Giulio Cesare Ottaviano"
+     },
+     {
+      "language": "it",
+      "value": "Giulio Cesare Ottaviano"
+     },
+     {
+      "language": "it",
+      "value": "Gaio Ottavio Turino"
+     },
+     {
+      "language": "it",
+      "value": "Cesare Augusto"
+     },
+     {
+      "language": "it",
+      "value": "Ottaviano"
+     },
+     {
+      "language": "it",
+      "value": "Gaio Giulio Cesare Ottaviano Augusto"
+     },
+     {
+      "language": "it",
+      "value": "Caio Giulio Cesare Ottaviano"
+     }
+    ],
+    "en": [
+     {
+      "language": "en",
+      "value": "Gaius Julius Caesar"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Caesar"
+     },
+     {
+      "language": "en",
+      "value": "Caesar Octavianus"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Octavius Thurinus"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Octavius Caepias"
+     },
+     {
+      "language": "en",
+      "value": "Caius Octavius Thurinus"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Julius Caesar Octavianus"
+     },
+     {
+      "language": "en",
+      "value": "Octavius Caesar"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Julius Caesar Octavianus Augustus"
+     },
+     {
+      "language": "en",
+      "value": "Octavianus"
+     },
+     {
+      "language": "en",
+      "value": "Caius Julius Cæsar Octavianus"
+     },
+     {
+      "language": "en",
+      "value": "Augustus Caesar"
+     },
+     {
+      "language": "en",
+      "value": "Imperator Gaius Julius Caesar Octavianus Divi Filius Augustus"
+     },
+     {
+      "language": "en",
+      "value": "Octavian"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Octavian"
+     },
+     {
+      "language": "en",
+      "value": "Caius Octavius"
+     },
+     {
+      "language": "en",
+      "value": "Gaius Julius Caesar Augustus"
+     }
+    ],
+    "es": [
+     {
+      "language": "es",
+      "value": "imperator Caesar Augustus"
+     },
+     {
+      "language": "es",
+      "value": "Gayo Julio Cesar Octaviano"
+     },
+     {
+      "language": "es",
+      "value": "Cayo Julio Cesar Octaviano"
+     },
+     {
+      "language": "es",
+      "value": "Gayo Octavio"
+     },
+     {
+      "language": "es",
+      "value": "Cayo Julio César Octaviano"
+     },
+     {
+      "language": "es",
+      "value": "Emperador César Augusto"
+     },
+     {
+      "language": "es",
+      "value": "Octavio"
+     },
+     {
+      "language": "es",
+      "value": "Gayo Julio César Octaviano"
+     },
+     {
+      "language": "es",
+      "value": "Caius Octavius Thurinus"
+     },
+     {
+      "language": "es",
+      "value": "Divus Augustus"
+     },
+     {
+      "language": "es",
+      "value": "César Augusto"
+     },
+     {
+      "language": "es",
+      "value": "IMPERATOR CAESAR AVGVSTVS"
+     },
+     {
+      "language": "es",
+      "value": "César"
+     },
+     {
+      "language": "es",
+      "value": "Caius Iulius Caesar Octavianus"
+     },
+     {
+      "language": "es",
+      "value": "Emperador Cesar Augusto"
+     },
+     {
+      "language": "es",
+      "value": "Cayo Octavio"
+     },
+     {
+      "language": "es",
+      "value": "Octavio Augusto"
+     }
+    ],
+    "de": [
+     {
+      "language": "de",
+      "value": "Kaiser Augustus Römisches Reich"
+     }
+    ],
+    "el": [
+     {
+      "language": "el",
+      "value": "Γάιος Ιούλιος Καίσαρ Οκταβιανός"
+     },
+     {
+      "language": "el",
+      "value": "Οκτάβιος Γάιος"
+     },
+     {
+      "language": "el",
+      "value": "Γάιος Οκτάβιος Θουρίνος"
+     },
+     {
+      "language": "el",
+      "value": "Οκταβιανός"
+     },
+     {
+      "language": "el",
+      "value": "Γάιος Οκτάβιος"
+     }
+    ],
+    "la": [
+     {
+      "language": "la",
+      "value": "Gaius Iulius Caesar Octavianus"
+     },
+     {
+      "language": "la",
+      "value": "Imperator Caesar Divi F. Augustus"
+     },
+     {
+      "language": "la",
+      "value": "Καῖσαρ Σεβαστός θεός"
+     },
+     {
+      "language": "la",
+      "value": "Imperator Caesar Divi Filius Augustus"
+     },
+     {
+      "language": "la",
+      "value": "Γάϊος Ὀκταούιος"
+     },
+     {
+      "language": "la",
+      "value": "Imperator Caesar Divi f. Augustus"
+     }
+    ],
+    "fr": [
+     {
+      "language": "fr",
+      "value": "Gaius Julius Caesar"
+     },
+     {
+      "language": "fr",
+      "value": "Octave"
+     },
+     {
+      "language": "fr",
+      "value": "Octavius Caesar"
+     },
+     {
+      "language": "fr",
+      "value": "Empereur Romain Auguste"
+     },
+     {
+      "language": "fr",
+      "value": "César Auguste"
+     },
+     {
+      "language": "fr",
+      "value": "Gaius Julius Caesar Augustus"
+     },
+     {
+      "language": "fr",
+      "value": "Octavien"
+     }
+    ]
+   },
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "hash": "ad7d38a03cdd40cdc373de0dc4e7b7fcbccb31d9",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 5,
+         "id": "Q5"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P19": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P19",
+       "hash": "22bf7e0895b36002ce756914f81306954a921739",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 220,
+         "id": "Q220"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P20": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P20",
+       "hash": "516ddd71e70f3f95196d666a2aad27ab34c4b24c",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 72288,
+         "id": "Q72288"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P26": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P26",
+       "hash": "065af6f4430b715cbd1531b2fea8288698f64920",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 237618,
+         "id": "Q237618"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P26",
+       "hash": "418204ad5b58b8f0817d1c838699a950da23b4f5",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 233444,
+         "id": "Q233444"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P26",
+       "hash": "9921fe948bfa66a4c55a42323db72524127a5f51",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 469701,
+         "id": "Q469701"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   }
+  }
+ },
+ "success": 1
+}

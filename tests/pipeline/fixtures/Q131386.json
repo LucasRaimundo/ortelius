@@ -1,0 +1,214 @@
+{
+ "entities": {
+  "Q131386": {
+   "type": "item",
+   "id": "Q131386",
+   "lastrevid": 2569212661,
+   "labels": {
+    "fr": {
+     "language": "fr",
+     "value": "siège d'Alésia"
+    },
+    "es": {
+     "language": "es",
+     "value": "Batalla de Alesia"
+    },
+    "it": {
+     "language": "it",
+     "value": "battaglia di Alesia"
+    },
+    "de": {
+     "language": "de",
+     "value": "Schlacht um Alesia"
+    },
+    "pt": {
+     "language": "pt",
+     "value": "Batalha de Alésia"
+    },
+    "en": {
+     "language": "en",
+     "value": "Battle of Alesia"
+    },
+    "la": {
+     "language": "la",
+     "value": "Alesiae pugna"
+    },
+    "el": {
+     "language": "el",
+     "value": "Μάχη της Αλεσίας"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "decisive Roman victory in which Rome secures the conquest of Gaul"
+    }
+   },
+   "aliases": {
+    "fr": [
+     {
+      "language": "fr",
+      "value": "Siège d’Alésia"
+     },
+     {
+      "language": "fr",
+      "value": "Siege d'Alesia"
+     },
+     {
+      "language": "fr",
+      "value": "Alesia"
+     },
+     {
+      "language": "fr",
+      "value": "Bataille d'Alésia"
+     }
+    ],
+    "es": [
+     {
+      "language": "es",
+      "value": "Sitio de Alesia"
+     },
+     {
+      "language": "es",
+      "value": "Asedio de Alesia"
+     }
+    ],
+    "it": [
+     {
+      "language": "it",
+      "value": "Assedio di Alesia"
+     }
+    ],
+    "de": [
+     {
+      "language": "de",
+      "value": "Belagerung von Alesia"
+     },
+     {
+      "language": "de",
+      "value": "Schlacht bei Alesia"
+     },
+     {
+      "language": "de",
+      "value": "Schlacht von Alesia"
+     }
+    ],
+    "pt": [
+     {
+      "language": "pt",
+      "value": "Cerco de Alésia"
+     }
+    ],
+    "en": [
+     {
+      "language": "en",
+      "value": "Siege of Alesia"
+     }
+    ]
+   },
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "hash": "baa1df9dcd37b9f3a062e7a14a8bef0c37078d32",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 178561,
+         "id": "Q178561"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "hash": "4fa1783d4cfdddbd24616e28fab46d9c00a29a54",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 188055,
+         "id": "Q188055"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P625": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P625",
+       "hash": "edecb56508b13bb4809414a93ea695c59c636d9e",
+       "datavalue": {
+        "value": {
+         "latitude": 47.53722222,
+         "longitude": 4.50027778,
+         "altitude": null,
+         "precision": 0.00027777777777778,
+         "globe": "http://www.wikidata.org/entity/Q2"
+        },
+        "type": "globecoordinate"
+       },
+       "datatype": "globe-coordinate"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P276": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P276",
+       "hash": "cac6901a3995e1fb5f8f4157b14f4391b69f929a",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 835966,
+         "id": "Q835966"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P361": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P361",
+       "hash": "038e415c8b3c8e98d09d23dd9e9cf1a6fea2efea",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 202161,
+         "id": "Q202161"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   }
+  }
+ },
+ "success": 1
+}
