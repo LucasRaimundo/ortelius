@@ -33,8 +33,9 @@ class WikidataClient:
             "props": "info|labels|aliases|descriptions|claims",
             "format": "json",
             "formatversion": "2",
-            "maxlag": "5",
         }
+        # Sem `maxlag`: ele inclui o atraso do serviço SPARQL, que existe para frear robôs que editam e costuma
+        # passar de minutos; com ele, uma leitura simples seria recusada por horas.
         problem = ""
         retry_after: str | None = None
         for attempt in range(MAX_ATTEMPTS):
@@ -56,10 +57,8 @@ class WikidataClient:
             if not isinstance(error, dict):
                 return body
             code = cast(dict[str, Any], error).get("code")
-            if code != "maxlag":
-                reason = "não existe no Wikidata" if code == "no-such-entity" else f"erro do Wikidata ({code})"
-                raise WikidataError(f"{qid}: {reason}")
-            problem = "servidores do Wikidata sobrecarregados (maxlag)"
+            reason = "não existe no Wikidata" if code == "no-such-entity" else f"erro do Wikidata ({code})"
+            raise WikidataError(f"{qid}: {reason}")
         raise WikidataError(f"{qid}: Wikidata indisponível após {MAX_ATTEMPTS} tentativas ({problem})")
 
 

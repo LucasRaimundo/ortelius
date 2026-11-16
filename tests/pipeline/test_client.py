@@ -4,7 +4,6 @@ import pytest
 from pipeline.wikidata.client import USER_AGENT, WikidataClient, WikidataError, create_http_client
 
 ITEM = {"entities": {"Q1": {"id": "Q1"}}, "success": 1}
-MAXLAG = {"error": {"code": "maxlag", "info": "lagged"}}
 
 
 def client_answering(*answers: httpx2.Response | Exception) -> tuple[WikidataClient, list[httpx2.Request], list[float]]:
@@ -27,19 +26,18 @@ def ok(body: object, headers: dict[str, str] | None = None) -> httpx2.Response:
     return httpx2.Response(200, json=body, headers=headers)
 
 
-def test_identifies_itself_and_asks_to_wait_when_servers_lag() -> None:
+def test_identifies_itself_and_reads_without_maxlag() -> None:
     client, requests, _ = client_answering(ok(ITEM))
 
     assert client.fetch_item("Q1") == ITEM
     assert requests[0].headers["User-Agent"] == USER_AGENT
-    assert requests[0].url.params["maxlag"] == "5"
+    assert "maxlag" not in requests[0].url.params
     assert requests[0].url.params["ids"] == "Q1"
 
 
 @pytest.mark.parametrize(
     "first",
     [
-        ok(MAXLAG, {"Retry-After": "5"}),
         httpx2.Response(429, headers={"Retry-After": "5"}),
         httpx2.Response(503, headers={"Retry-After": "5"}),
     ],
@@ -81,6 +79,7 @@ def test_gives_up_after_the_last_attempt_saying_why() -> None:
     [
         (ok({"error": {"code": "no-such-entity"}}), "Q1: não existe no Wikidata"),
         (ok({"error": {"code": "param-invalid"}}), r"Q1: erro do Wikidata \(param-invalid\)"),
+        (ok({"error": {"code": "maxlag"}}), r"Q1: erro do Wikidata \(maxlag\)"),
         (httpx2.Response(403), "Q1: o Wikidata respondeu HTTP 403"),
         (httpx2.Response(200, text="<html>"), "Q1: resposta do Wikidata não é JSON"),
     ],
