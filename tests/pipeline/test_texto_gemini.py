@@ -115,12 +115,23 @@ def test_daily_quota_fails_at_once() -> None:
     assert len(requests) == 1
 
 
-def test_gives_up_after_three_server_errors() -> None:
-    drafter, requests, sleeps = drafter_answering(gemini_error(503), httpx2.ConnectError("sem rede"), gemini_error(500))
+def test_waits_minutes_while_the_model_is_overloaded_and_then_says_why() -> None:
+    overloaded = httpx2.Response(503, json={"error": {"code": 503, "message": "high demand", "status": "UNAVAILABLE"}})
+    drafter, requests, sleeps = drafter_answering(
+        overloaded, httpx2.ConnectError("sem rede"), overloaded, overloaded, overloaded
+    )
 
-    with pytest.raises(DraftingError, match=r"indisponível após 3 tentativas \(HTTP 500\)"):
+    with pytest.raises(DraftingError, match=r"indisponível após 5 tentativas \(HTTP 503: high demand\)"):
         drafter.draft(REQUEST)
-    assert (len(requests), sleeps) == (3, [2.0, 4.0])
+    assert (len(requests), sleeps) == (5, [10.0, 30.0, 60.0, 60.0])
+
+
+def test_recovers_when_the_overload_passes() -> None:
+    drafter, requests, sleeps = drafter_answering(gemini_error(503), httpx2.Response(200, json=gemini_body()))
+
+    drafter.draft(REQUEST)
+
+    assert (len(requests), sleeps) == (2, [10.0])
 
 
 def test_request_errors_fail_without_retrying_and_without_the_key() -> None:

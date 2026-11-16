@@ -14,7 +14,9 @@ from pipeline.texto.draft import OUTPUT_SCHEMA
 from pipeline.texto.sources import SourceText
 
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-MAX_ATTEMPTS = 3
+# Sobrecarga do modelo (503 "high demand") dura minutos; esperas curtas só gastam as tentativas.
+RETRY_WAITS_SECONDS = (10.0, 30.0, 60.0, 60.0)
+MAX_ATTEMPTS = len(RETRY_WAITS_SECONDS) + 1
 MAX_WAIT_SECONDS = 60.0
 MAX_OUTPUT_TOKENS = 32_768
 
@@ -112,7 +114,10 @@ class GeminiDrafter:
                     API_URL.format(model=self._model), json=body, headers={"x-goog-api-key": self._api_key}
                 )
             except httpx2.TransportError as error:
-                problem, wait = f"falha de rede: {error!r}", 2.0 ** (attempt + 1)
+                problem, wait = (
+                    f"falha de rede: {error!r}",
+                    RETRY_WAITS_SECONDS[min(attempt, len(RETRY_WAITS_SECONDS) - 1)],
+                )
             else:
                 if response.status_code == 200:
                     return _reply(_json(response))
@@ -122,8 +127,9 @@ class GeminiDrafter:
                 if response.status_code != 429 and response.status_code < 500:
                     message = error.get("message", "")
                     raise DraftingError(f"o Gemini recusou o pedido (HTTP {response.status_code}): {message}")
-                problem = f"HTTP {response.status_code}"
-                wait = _retry_delay(error) or 2.0 ** (attempt + 1)
+                message = str(error.get("message", "")).strip()
+                problem = f"HTTP {response.status_code}: {message}" if message else f"HTTP {response.status_code}"
+                wait = _retry_delay(error) or RETRY_WAITS_SECONDS[min(attempt, len(RETRY_WAITS_SECONDS) - 1)]
             if attempt + 1 < MAX_ATTEMPTS:
                 self._sleep(min(wait, MAX_WAIT_SECONDS))
         raise DraftingError(f"Gemini indisponível após {MAX_ATTEMPTS} tentativas ({problem})")
