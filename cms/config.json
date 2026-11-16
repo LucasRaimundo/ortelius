@@ -125,6 +125,21 @@
         ]
       }
     },
+    "entity_draft_runs": {
+      "meta": {
+        "icon": "history",
+        "display_template": "{{created_at}} · {{kind}}",
+        "hidden": true,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Origem do rascunho",
+            "singular": "Execução do pipeline",
+            "plural": "Execuções do pipeline"
+          }
+        ]
+      }
+    },
     "alembic_version": {
       "meta": {
         "hidden": true
@@ -347,10 +362,36 @@
           }
         }
       },
+      "wikidata_id": {
+        "meta": {
+          "interface": "input",
+          "sort": 9,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Código no Wikidata"
+            }
+          ],
+          "hidden": false,
+          "note": "Ex.: Q220 para Roma. Liga a entidade ao Wikidata; o pipeline usa o código para não duplicar entidades e para criar relações com as que já existem.",
+          "validation": {
+            "_and": [
+              {
+                "wikidata_id": {
+                  "_regex": "^Q[1-9][0-9]*$"
+                }
+              }
+            ]
+          },
+          "validation_message": "Use o código do item no Wikidata: Q seguido de números (ex.: Q220)."
+        }
+      },
       "sections": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 9,
+          "sort": 10,
           "width": "full",
           "required": false,
           "translations": [
@@ -372,7 +413,7 @@
       "relations": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 10,
+          "sort": 11,
           "width": "full",
           "required": false,
           "translations": [
@@ -396,7 +437,7 @@
       "aliases": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 11,
+          "sort": 12,
           "width": "full",
           "required": false,
           "translations": [
@@ -419,7 +460,7 @@
       "citations": {
         "meta": {
           "interface": "list-m2m",
-          "sort": 12,
+          "sort": 13,
           "width": "full",
           "required": false,
           "translations": [
@@ -437,6 +478,51 @@
           },
           "special": [
             "m2m"
+          ]
+        },
+        "type": "alias"
+      },
+      "draft_notice": {
+        "meta": {
+          "interface": "presentation-notice",
+          "special": [
+            "alias",
+            "no-data"
+          ],
+          "sort": 14,
+          "width": "full",
+          "required": false,
+          "hidden": false,
+          "options": {
+            "color": "warning",
+            "icon": "fact_check",
+            "text": "Rascunhos gerados pelo pipeline aparecem em \"Origem do rascunho\". Texto gerado por modelo pode afirmar o que as fontes não dizem: confira cada data, nome e afirmação contra as fontes, começando pelos pontos a conferir, antes de publicar."
+          }
+        },
+        "type": "alias"
+      },
+      "draft_runs": {
+        "meta": {
+          "interface": "list-o2m",
+          "sort": 15,
+          "width": "full",
+          "required": false,
+          "readonly": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Origem do rascunho"
+            }
+          ],
+          "hidden": false,
+          "note": "Preenchido pelo pipeline. Vazio para entidades cadastradas à mão.",
+          "options": {
+            "template": "{{created_at}} · {{kind}}",
+            "enableCreate": false,
+            "enableSelect": false
+          },
+          "special": [
+            "o2m"
           ]
         },
         "type": "alias"
@@ -1048,6 +1134,65 @@
           "hidden": false,
           "note": "Limitações e cuidados no uso desta fonte."
         }
+      },
+      "text_url": {
+        "meta": {
+          "interface": "input",
+          "sort": 12,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Endereço do texto"
+            }
+          ],
+          "hidden": false,
+          "note": "Página com o texto da obra (tradução ou original) para o pipeline ler ao gerar rascunhos. Só Perseus, LacusCurtius, Wikisource ou Project Gutenberg.",
+          "validation": {
+            "_and": [
+              {
+                "text_url": {
+                  "_regex": "^https?://"
+                }
+              }
+            ]
+          },
+          "validation_message": "Informe um endereço que comece com http:// ou https://."
+        }
+      },
+      "text_license": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 13,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Licença do texto"
+            }
+          ],
+          "hidden": false,
+          "note": "Obrigatória com o endereço do texto. Só textos com estas licenças podem ser enviados ao modelo; Wikipédia (CC BY-SA) e obras com direitos autorais não.",
+          "options": {
+            "choices": [
+              {
+                "text": "Domínio público",
+                "value": "public_domain"
+              },
+              {
+                "text": "CC0",
+                "value": "cc0"
+              },
+              {
+                "text": "CC BY (com atribuição)",
+                "value": "cc_by"
+              }
+            ],
+            "allowNone": true
+          }
+        }
       }
     },
     "entity_sources": {
@@ -1134,6 +1279,155 @@
           "hidden": false,
           "note": "Como a fonte foi usada."
         }
+      },
+      "excerpt": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 6,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Trecho da fonte"
+            }
+          ],
+          "hidden": false,
+          "note": "Trecho relevante colado da fonte, para fontes sem endereço do texto. Só é enviado ao modelo se a fonte tiver licença do texto aberta."
+        }
+      }
+    },
+    "entity_draft_runs": {
+      "entity_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 1,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Entidade"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "template": "{{name}}"
+          },
+          "readonly": true
+        }
+      },
+      "kind": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 2,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Origem"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "choices": [
+              {
+                "text": "Fatos do Wikidata",
+                "value": "wikidata"
+              },
+              {
+                "text": "Texto gerado",
+                "value": "text"
+              }
+            ]
+          },
+          "display": "labels",
+          "display_options": {
+            "choices": [
+              {
+                "text": "Fatos do Wikidata",
+                "value": "wikidata"
+              },
+              {
+                "text": "Texto gerado",
+                "value": "text"
+              }
+            ]
+          },
+          "readonly": true
+        }
+      },
+      "created_at": {
+        "meta": {
+          "interface": "datetime",
+          "sort": 3,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Gerado em"
+            }
+          ],
+          "hidden": false,
+          "display": "datetime",
+          "readonly": true
+        }
+      },
+      "model": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Modelo"
+            }
+          ],
+          "hidden": false,
+          "note": "Modelo de linguagem que escreveu o texto. Vazio para fatos do Wikidata.",
+          "readonly": true
+        }
+      },
+      "points_to_check": {
+        "meta": {
+          "interface": "input-multiline",
+          "sort": 5,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Pontos a conferir"
+            }
+          ],
+          "hidden": false,
+          "note": "Afirmações que o modelo não encontrou explicitamente nas fontes. Confira primeiro.",
+          "readonly": true
+        }
+      },
+      "details": {
+        "meta": {
+          "interface": "input-code",
+          "sort": 6,
+          "width": "full",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Detalhes técnicos"
+            }
+          ],
+          "hidden": false,
+          "note": "Fontes lidas (endereço e hash do texto), fontes usadas por seção e revisão do item no Wikidata.",
+          "options": {
+            "language": "JSON"
+          },
+          "readonly": true
+        }
       }
     }
   },
@@ -1179,6 +1473,13 @@
       "meta": {
         "junction_field": "entity_id",
         "one_field": null
+      }
+    },
+    {
+      "collection": "entity_draft_runs",
+      "field": "entity_id",
+      "meta": {
+        "one_field": "draft_runs"
       }
     }
   ],
@@ -1245,6 +1546,9 @@
           "update"
         ],
         "directus_folders": [
+          "read"
+        ],
+        "entity_draft_runs": [
           "read"
         ]
       }

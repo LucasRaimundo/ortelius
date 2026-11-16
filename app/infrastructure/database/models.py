@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
-from app.domain.entities import EntityType, PublicationStatus, SourceType
+from app.domain.entities import DraftRunKind, EntityType, PublicationStatus, SourceType, TextLicense
 
 NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s",
@@ -60,6 +60,7 @@ class EntityRow(_Timestamps, Base):
         CheckConstraint(_in_list("entity_type", EntityType), name="entity_type"),
         CheckConstraint(_in_list("status", PublicationStatus), name="status"),
         CheckConstraint("ST_IsValid(location)", name="location_valid"),
+        CheckConstraint("wikidata_id ~ '^Q[1-9][0-9]*$'", name="wikidata_id_format"),
         Index("ix_entities_location", "location", postgresql_using="gist"),
     )
 
@@ -74,6 +75,7 @@ class EntityRow(_Timestamps, Base):
     location: Mapped[WKBElement | WKTElement | None] = mapped_column(
         Geometry("POINT", srid=4326, spatial_index=False), nullable=True
     )
+    wikidata_id: Mapped[str | None] = mapped_column(String(16), unique=True)
 
 
 class EntityAliasRow(_Timestamps, Base):
@@ -146,7 +148,12 @@ class EntityRelationRow(_Timestamps, Base):
 
 class SourceRow(_Timestamps, Base):
     __tablename__ = "sources"
-    __table_args__ = (CheckConstraint(_in_list("source_type", SourceType), name="source_type"),)
+    __table_args__ = (
+        CheckConstraint(_in_list("source_type", SourceType), name="source_type"),
+        CheckConstraint("text_url ~ '^https?://'", name="text_url_format"),
+        CheckConstraint(_in_list("text_license", TextLicense), name="text_license"),
+        CheckConstraint("text_url IS NULL OR text_license IS NOT NULL", name="text_url_requires_license"),
+    )
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     title: Mapped[str] = mapped_column(String(500))
@@ -160,6 +167,8 @@ class SourceRow(_Timestamps, Base):
     source_nature: Mapped[str | None] = mapped_column(String(32))
     reliability_note: Mapped[str | None] = mapped_column(Text)
     license: Mapped[str | None] = mapped_column(String(180))
+    text_url: Mapped[str | None] = mapped_column(Text)
+    text_license: Mapped[str | None] = mapped_column(String(24))
 
 
 class EntitySourceRow(_Timestamps, Base):
@@ -171,6 +180,24 @@ class EntitySourceRow(_Timestamps, Base):
     contribution_type: Mapped[str] = mapped_column(String(48), server_default="fundamenta")
     locator: Mapped[str | None] = mapped_column(String(500))
     notes: Mapped[str | None] = mapped_column(Text)
+    excerpt: Mapped[str | None] = mapped_column(Text)
+
+
+class EntityDraftRunRow(Base):
+    __tablename__ = "entity_draft_runs"
+    __table_args__ = (
+        CheckConstraint(_in_list("kind", DraftRunKind), name="kind"),
+        CheckConstraint(f"(kind = '{DraftRunKind.TEXT}') = (model IS NOT NULL)", name="model_only_for_text"),
+        CheckConstraint("jsonb_typeof(details) = 'object'", name="details_is_object"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    entity_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("entities.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    model: Mapped[str | None] = mapped_column(String(120))
+    points_to_check: Mapped[str | None] = mapped_column(Text)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # Tabelas que existem no banco mas não pertencem ao domínio (criadas por extensões).
