@@ -1,0 +1,208 @@
+{
+ "entities": {
+  "Q60220": {
+   "type": "item",
+   "id": "Q60220",
+   "lastrevid": 2565893712,
+   "labels": {
+    "es": {
+     "language": "es",
+     "value": "Eneida"
+    },
+    "el": {
+     "language": "el",
+     "value": "Αινειάδα"
+    },
+    "pt": {
+     "language": "pt",
+     "value": "Eneida"
+    },
+    "fr": {
+     "language": "fr",
+     "value": "Énéide"
+    },
+    "it": {
+     "language": "it",
+     "value": "Eneide"
+    },
+    "de": {
+     "language": "de",
+     "value": "Aeneis"
+    },
+    "en": {
+     "language": "en",
+     "value": "Aeneid"
+    },
+    "la": {
+     "language": "la",
+     "value": "Aeneis"
+    },
+    "grc": {
+     "language": "grc",
+     "value": "Αἰνειάς"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "epic poem by Virgil"
+    },
+    "pt": {
+     "language": "pt",
+     "value": "poema"
+    }
+   },
+   "aliases": {
+    "es": [
+     {
+      "language": "es",
+      "value": "La Eneida"
+     },
+     {
+      "language": "es",
+      "value": "Aeneis"
+     }
+    ],
+    "el": [
+     {
+      "language": "el",
+      "value": "Αινειάς"
+     }
+    ],
+    "pt": [
+     {
+      "language": "pt",
+      "value": "Arma virumque cano"
+     },
+     {
+      "language": "pt",
+      "value": "Aeneis"
+     }
+    ],
+    "fr": [
+     {
+      "language": "fr",
+      "value": "Eneide"
+     },
+     {
+      "language": "fr",
+      "value": "Eneïde"
+     },
+     {
+      "language": "fr",
+      "value": "L’Énéide"
+     },
+     {
+      "language": "fr",
+      "value": "Enéide"
+     },
+     {
+      "language": "fr",
+      "value": "L'Eneide"
+     },
+     {
+      "language": "fr",
+      "value": "L'Enéide"
+     },
+     {
+      "language": "fr",
+      "value": "L'Énéide"
+     },
+     {
+      "language": "fr",
+      "value": "Aeneis"
+     }
+    ],
+    "it": [
+     {
+      "language": "it",
+      "value": "Aeneis"
+     }
+    ],
+    "de": [
+     {
+      "language": "de",
+      "value": "Aeneïs"
+     },
+     {
+      "language": "de",
+      "value": "Äneide"
+     },
+     {
+      "language": "de",
+      "value": "Äneis"
+     },
+     {
+      "language": "de",
+      "value": "Lied vom Helden Aeneas"
+     }
+    ],
+    "en": [
+     {
+      "language": "en",
+      "value": "Aenēis"
+     },
+     {
+      "language": "en",
+      "value": "Aeneis"
+     },
+     {
+      "language": "en",
+      "value": "Eneid"
+     },
+     {
+      "language": "en",
+      "value": "Æneid"
+     },
+     {
+      "language": "en",
+      "value": "Verg. A."
+     }
+    ]
+   },
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "hash": "5963e3cad5eee4ae1cffbefbac15327800b9a7e6",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 7725634,
+         "id": "Q7725634"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P50": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P50",
+       "hash": "4166b650937347c6ab08d2a5dc84b7ac51194b0e",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1398,
+         "id": "Q1398"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   }
+  }
+ },
+ "success": 1
+}
