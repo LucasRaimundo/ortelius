@@ -3,12 +3,13 @@ from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database.models import Base, EntityRow
+from app.domain.entities import DraftRunKind
+from app.infrastructure.database.models import Base, EntityDraftRunRow, EntityRow
 from tests.factories import add_entity
 
-# Tabelas de domínio que o painel editorial não pode editar. Vazio hoje: toda tabela de domínio nova
-# precisa ou ser concedida a atlas_editor numa migration, ou entrar aqui por decisão explícita.
-NOT_EDITABLE_TABLES: frozenset[str] = frozenset()
+# Tabelas de domínio que o painel editorial só lê. Toda tabela de domínio nova precisa ou ser concedida a
+# atlas_editor numa migration, ou entrar aqui por decisão explícita.
+READ_ONLY_TABLES = frozenset({"entity_draft_runs"})
 
 
 def act_as_editor(session: Session) -> None:
@@ -19,7 +20,7 @@ def test_every_domain_table_has_an_explicit_editor_access_decision(db_session: S
     missing = [
         table
         for table in Base.metadata.tables
-        if table not in NOT_EDITABLE_TABLES
+        if table not in READ_ONLY_TABLES
         and not db_session.scalar(
             text("SELECT has_table_privilege('atlas_editor', :table, 'SELECT, INSERT, UPDATE, DELETE')"),
             {"table": f"public.{table}"},
@@ -36,6 +37,17 @@ def test_editor_can_write_content(db_session: Session) -> None:
     db_session.flush()
 
     assert db_session.get(EntityRow, entity.id) is not None
+
+
+def test_editor_reads_but_cannot_write_draft_origin(db_session: Session) -> None:
+    entity = add_entity(db_session, "roma")
+    db_session.add(EntityDraftRunRow(entity_id=entity.id, kind=DraftRunKind.WIKIDATA))
+    db_session.flush()
+    act_as_editor(db_session)
+
+    assert db_session.scalar(text("SELECT count(*) FROM entity_draft_runs")) == 1
+    with pytest.raises(ProgrammingError, match="permission denied"):
+        db_session.execute(text("UPDATE entity_draft_runs SET points_to_check = 'editado'"))
 
 
 def test_editor_can_create_tables_in_directus_schema(db_session: Session) -> None:
