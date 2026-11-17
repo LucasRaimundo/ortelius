@@ -1,4 +1,6 @@
+import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -209,3 +211,17 @@ def test_command_stops_the_batch_when_the_daily_quota_ends(
     assert (code, attempted) == (1, ["batalha-de-alesia", "vercingetorix"])
     assert "parado     sem tentar, para não gastar pedidos: virgilio, marco-antonio" in output
     assert "1 de 4 entidade(s) com texto gerado" in output
+
+
+def test_saves_the_rejected_answer_for_diagnosis(
+    session_factory: Callable[[], Session], augusto: EntityRow, tmp_path: Path
+) -> None:
+    bad: dict[str, Any] = {**ANSWER, "sections": [{**ANSWER["sections"][0], "sources": []}]}
+
+    with pytest.raises(InvalidDraftError, match="resposta do modelo salva em") as error:
+        generate(session_factory, FakeDrafter(bad), rejected_dir=tmp_path)
+
+    [saved] = tmp_path.iterdir()
+    assert str(saved) in str(error.value)
+    record = json.loads(saved.read_text())
+    assert (record["model"], record["payload"]) == ("gemini-3.8-flash", bad)

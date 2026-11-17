@@ -1,11 +1,12 @@
 import json
-from typing import Any
+from typing import Any, cast
 
 import httpx2
 import pytest
 
+from pipeline.texto.draft import OUTPUT_SCHEMA
 from pipeline.texto.model import DraftingError, QuotaExhaustedError, create_http_client
-from pipeline.texto.openrouter import DEFAULT_MODEL, OpenRouterDrafter
+from pipeline.texto.openrouter import DEFAULT_MODEL, OpenRouterDrafter, strict_schema
 from tests.pipeline.test_texto_gemini import ANSWER, REQUEST
 
 API_KEY = "sk-or-v1-teste"
@@ -48,6 +49,7 @@ def test_sends_the_schema_and_records_which_provider_answered() -> None:
     assert body["response_format"]["json_schema"]["schema"]["required"][0] == "summary"
     assert [message["role"] for message in body["messages"]] == ["system", "user"]
     assert body["reasoning"] == {"effort": "low", "exclude": True}
+    assert body["response_format"]["json_schema"]["strict"] is True
     assert (reply.payload, reply.model_version) == (ANSWER, f"{DEFAULT_MODEL} via Nvidia")
     assert reply.usage["total_tokens"] == 520
 
@@ -115,3 +117,27 @@ def test_upstream_error_inside_a_successful_response_is_retried() -> None:
     drafter.draft(REQUEST)
 
     assert (len(requests), sleeps) == (2, [10.0])
+
+
+def objects_in(schema: dict[str, Any]) -> list[dict[str, Any]]:
+    found = [schema] if schema.get("type") == "object" else []
+    for child in [*schema.get("properties", {}).values(), schema.get("items")]:
+        if isinstance(child, dict):
+            found += objects_in(cast(dict[str, Any], child))
+    return found
+
+
+def test_strict_schema_requires_every_field_and_lets_optional_ones_be_null() -> None:
+    strict = strict_schema(OUTPUT_SCHEMA)
+
+    objects = objects_in(strict)
+    block = strict["properties"]["sections"]["items"]["properties"]["blocks"]["items"]
+    assert len(objects) == 3
+    assert all(o["additionalProperties"] is False and o["required"] == list(o["properties"]) for o in objects)
+    assert block["properties"]["type"]["type"] == "string"
+    assert block["properties"]["level"] == {
+        "type": ["integer", "null"],
+        "enum": [3, 4, None],
+        "description": "Só para heading.",
+    }
+    assert OUTPUT_SCHEMA["properties"]["sections"]["items"]["required"] == ["title", "sources", "blocks"]

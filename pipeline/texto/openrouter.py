@@ -26,6 +26,33 @@ DEFAULT_MODEL = "nvidia/nemotron-3.5-super-vl:free"
 MAX_COMPLETION_TOKENS = 65_536
 
 
+def strict_schema(schema: Mapping[str, Any]) -> dict[str, Any]:
+    """Versão do schema aceita pelo modo estrito: todo campo obrigatório, os opcionais aceitando null."""
+    node = dict(schema)
+    if node.get("type") == "object":
+        required = set(cast(list[str], node.get("required", [])))
+        properties = cast(dict[str, Any], node.get("properties", {}))
+        node["properties"] = {
+            name: strict_schema(spec) if name in required else _nullable(strict_schema(spec))
+            for name, spec in properties.items()
+        }
+        node["required"] = list(properties)
+        node["additionalProperties"] = False
+    if node.get("type") == "array" and "items" in node:
+        node["items"] = strict_schema(cast(dict[str, Any], node["items"]))
+    return node
+
+
+def _nullable(schema: dict[str, Any]) -> dict[str, Any]:
+    node = {**schema, "type": [schema["type"], "null"]}
+    if "enum" in node:
+        node["enum"] = [*node["enum"], None]
+    return node
+
+
+STRICT_SCHEMA = strict_schema(OUTPUT_SCHEMA)
+
+
 def _is_daily_quota(error: Mapping[str, Any]) -> bool:
     # Modelos gratuitos têm limite diário por conta; o OpenRouter só o distingue pela mensagem.
     return "per-day" in str(error.get("message", "")).lower()
@@ -61,10 +88,10 @@ class OpenRouterDrafter:
                 {"role": "system", "content": SYSTEM_INSTRUCTION},
                 {"role": "user", "content": build_prompt(request)},
             ],
-            # strict exige todos os campos obrigatórios; os blocos têm campos opcionais por tipo.
+            # Sem strict, o formato é só sugerido: o Ernie omitiu campos obrigatórios em 2 de 5 respostas.
             "response_format": {
                 "type": "json_schema",
-                "json_schema": {"name": "rascunho", "strict": False, "schema": OUTPUT_SCHEMA},
+                "json_schema": {"name": "rascunho", "strict": True, "schema": STRICT_SCHEMA},
             },
             "max_tokens": MAX_COMPLETION_TOKENS,
             "reasoning": {"effort": "low", "exclude": True},

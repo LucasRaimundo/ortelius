@@ -4,8 +4,11 @@ Rede e modelo ficam fora da transação, que pode levar minutos; a gravação é
 novo o estado da entidade antes de escrever.
 """
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -19,7 +22,7 @@ from app.infrastructure.database.models import (
     EntitySourceRow,
     SourceRow,
 )
-from pipeline.texto.draft import TextDraft, parse_draft
+from pipeline.texto.draft import InvalidDraftError, TextDraft, parse_draft
 from pipeline.texto.model import DraftRequest, ModelReply, TextDrafter
 from pipeline.texto.sources import Citation, GatheredSources, gather_sources
 
@@ -43,6 +46,7 @@ def generate_text(
     fetch_text: Callable[[str], str],
     replace: bool = False,
     progress: Callable[[str], None] = lambda message: None,
+    rejected_dir: Path | None = None,
 ) -> str:
     with session_factory() as session:
         target = _target(session, slug, replace=replace)
@@ -54,11 +58,26 @@ def generate_text(
         "pode levar alguns minutos"
     )
     reply = drafter.draft(DraftRequest(target.name, target.entity_type, gathered.texts))
-    draft = parse_draft(reply.payload, {source.label for source in gathered.texts})
+    try:
+        draft = parse_draft(reply.payload, {source.label for source in gathered.texts})
+    except InvalidDraftError as error:
+        if rejected_dir is None:
+            raise
+        path = _save_rejected(rejected_dir, slug, reply)
+        raise InvalidDraftError(f"{error} (resposta do modelo salva em {path})") from error
     with session_factory() as session, session.begin():
         entity = _entity(session, slug, replace=replace)
         _write(session, entity, draft, reply, gathered, model=drafter.model)
     return f"{len(draft.sections)} seção(ões), {len(draft.points_to_check)} ponto(s) a conferir"
+
+
+def _save_rejected(directory: Path, slug: str, reply: ModelReply) -> Path:
+    """Guarda a resposta que a validação recusou: sem ela, não há como saber o que o modelo errou."""
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{slug}-{datetime.now(UTC):%Y%m%dT%H%M%SZ}.json"
+    record = {"model": reply.model_version, "usage": reply.usage, "payload": reply.payload}
+    path.write_text(json.dumps(record, ensure_ascii=False, indent=2))
+    return path
 
 
 def _target(session: Session, slug: str, *, replace: bool) -> _Target:

@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 import httpx2
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,6 +15,9 @@ from pipeline.texto.draft import InvalidDraftError
 from pipeline.texto.model import DraftingError, QuotaExhaustedError, TextDrafter, create_http_client
 from pipeline.texto.sources import SourceFetcher, SourceTextError
 from pipeline.texto.writer import TextRefusedError, generate_text
+
+# Respostas que a validação recusou, para diagnóstico; fora do git.
+REJECTED_DIR = Path(".pipeline/recusadas")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
                     fetch_text=SourceFetcher(source_http).fetch_text,
                     replace=args.substituir,
                     progress=lambda step, slug=slug: print(f"...        {slug}: {step}", flush=True),
+                    rejected_dir=REJECTED_DIR,
                 )
                 print(f"gerado     {slug}: {message}")
             except QuotaExhaustedError as error:

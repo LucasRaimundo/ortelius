@@ -31,7 +31,6 @@ OUTPUT_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "key": {"type": "string", "description": "Minúsculas sem acento e hífens, ex.: origem-e-familia"},
                     "title": {"type": "string"},
                     "sources": {
                         "type": "array",
@@ -114,14 +113,13 @@ def _points(raw: object) -> tuple[str, ...]:
     return tuple(point for point in points if point)
 
 
-def _section_key(proposed: object, title: str, path: str) -> str:
-    """A chave é técnica: o pipeline a normaliza em vez de recusar o texto por causa dela.
+def _section_key(title: str, path: str) -> str:
+    """A chave é técnica e sai do título, não do modelo.
 
-    Modelos menores ignoram o formato pedido (ex.: `origens_e_nascimento`); o título serve quando a sugestão
-    não aproveita nada.
+    Modelos menores devolveram chaves fora do formato (`origens_e_nascimento`) e até sem sentido
+    (`0x715876a9ed60`); derivar do título é determinístico e legível no painel.
     """
-    key = (slugify(proposed) if isinstance(proposed, str) else "") or slugify(title)
-    key = key[:MAX_KEY_LENGTH].rstrip("-")
+    key = slugify(title)[:MAX_KEY_LENGTH].rstrip("-")
     if not key:
         raise InvalidDraftError(f"{path}.key: não foi possível formar uma chave a partir de {title!r}")
     return key
@@ -135,14 +133,18 @@ def _with_suffix(key: str, number: int) -> str:
 def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSection:
     data = _object(raw, path)
     title = _text(data, "title", path)[:180]
-    key = _section_key(data.get("key"), title, path)
+    key = _section_key(title, path)
     labels = tuple(dict.fromkeys(_string(label, f"{path}.sources") for label in _list(data.get("sources"), path)))
     if not labels:
         raise InvalidDraftError(f"{path}.sources: a seção não indica nenhuma fonte")
     unknown = [label for label in labels if label not in source_labels]
     if unknown:
         raise InvalidDraftError(f"{path}.sources: fontes que não foram fornecidas: {', '.join(unknown)}")
-    blocks = [_editor_block(block, f"{path}.blocks[{i}]") for i, block in enumerate(_list(data.get("blocks"), path))]
+    blocks = [
+        converted
+        for i, block in enumerate(_list(data.get("blocks"), path))
+        for converted in _editor_blocks(block, f"{path}.blocks[{i}]")
+    ]
     document: dict[str, Any] = {"time": int(time.time() * 1000), "version": EDITORJS_VERSION, "blocks": blocks}
     try:
         if not to_blocks(document):
@@ -152,8 +154,16 @@ def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSec
     return DraftSection(key=key, title=title, document=document, source_labels=labels)
 
 
-def _editor_block(raw: object, path: str) -> dict[str, Any]:
+def _editor_blocks(raw: object, path: str) -> list[dict[str, Any]]:
     block = _object(raw, path)
+    if block.get("type") == "paragraph" and block.get("text") is None and isinstance(block.get("items"), list):
+        # O Ernie pôs o texto dos parágrafos no campo das listas; cada item vira um parágrafo, sem inventar nada.
+        texts = [_string(item, f"{path}.items").strip() for item in _list(block.get("items"), path)]
+        return [{"type": "paragraph", "data": {"text": _inline(text)}} for text in texts if text]
+    return [_editor_block(block, path)]
+
+
+def _editor_block(block: Mapping[str, object], path: str) -> dict[str, Any]:
     match block.get("type"):
         case "paragraph":
             return {"type": "paragraph", "data": {"text": _inline(_text(block, "text", path))}}
