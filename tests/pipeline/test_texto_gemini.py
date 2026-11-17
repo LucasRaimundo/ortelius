@@ -5,7 +5,14 @@ from uuid import uuid4
 import httpx2
 import pytest
 
-from pipeline.texto.gemini import DraftingError, DraftRequest, GeminiDrafter, build_prompt, create_http_client
+from pipeline.texto.gemini import (
+    DraftingError,
+    DraftRequest,
+    GeminiDrafter,
+    QuotaExhaustedError,
+    build_prompt,
+    create_http_client,
+)
 from pipeline.texto.sources import SourceText
 
 API_KEY = "chave-de-teste"
@@ -44,7 +51,18 @@ def drafter_answering(*answers: httpx2.Response | Exception) -> tuple[GeminiDraf
         return answer
 
     http = create_http_client(httpx2.MockTransport(handle))
-    return GeminiDrafter(http, api_key=API_KEY, model="gemini-flash-latest", sleep=sleeps.append), requests, sleeps
+    drafter = GeminiDrafter(
+        http, api_key=API_KEY, model="gemini-flash-latest", sleep=sleeps.append, notify=NOTICES.append
+    )
+    return drafter, requests, sleeps
+
+
+NOTICES: list[str] = []
+
+
+@pytest.fixture(autouse=True)
+def clear_notices() -> None:
+    NOTICES.clear()
 
 
 def test_sends_sources_and_schema_with_the_key_only_in_the_header() -> None:
@@ -110,7 +128,7 @@ def test_daily_quota_fails_at_once() -> None:
     }
     drafter, requests, _ = drafter_answering(gemini_error(429, quota))
 
-    with pytest.raises(DraftingError, match="cota diária gratuita do Gemini esgotada"):
+    with pytest.raises(QuotaExhaustedError, match="cota diária gratuita do Gemini esgotada"):
         drafter.draft(REQUEST)
     assert len(requests) == 1
 
@@ -124,6 +142,15 @@ def test_waits_minutes_while_the_model_is_overloaded_and_then_says_why() -> None
     with pytest.raises(DraftingError, match=r"indisponível após 5 tentativas \(HTTP 503: high demand\)"):
         drafter.draft(REQUEST)
     assert (len(requests), sleeps) == (5, [10.0, 30.0, 60.0, 60.0])
+    assert NOTICES[0] == "Gemini indisponível (HTTP 503: high demand); nova tentativa em 10 s"
+
+
+def test_does_not_resend_the_sources_when_the_answer_times_out() -> None:
+    drafter, requests, sleeps = drafter_answering(httpx2.ReadTimeout("lento"), httpx2.Response(200, json=gemini_body()))
+
+    with pytest.raises(DraftingError, match=r"não respondeu a tempo.*nada foi gravado"):
+        drafter.draft(REQUEST)
+    assert (len(requests), sleeps) == (1, [])
 
 
 def test_recovers_when_the_overload_passes() -> None:

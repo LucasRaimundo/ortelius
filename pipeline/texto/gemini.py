@@ -46,6 +46,10 @@ class DraftingError(Exception):
     """O modelo não produziu um rascunho; a mensagem diz o motivo e o que fazer."""
 
 
+class QuotaExhaustedError(DraftingError):
+    """A cota do dia acabou: nenhum pedido seguinte terá sucesso até ela renovar."""
+
+
 @dataclass(frozen=True)
 class DraftRequest:
     entity_name: str
@@ -85,12 +89,19 @@ def create_http_client(transport: httpx2.BaseTransport | None = None) -> httpx2.
 
 class GeminiDrafter:
     def __init__(
-        self, http: httpx2.Client, *, api_key: str, model: str, sleep: Callable[[float], None] = time.sleep
+        self,
+        http: httpx2.Client,
+        *,
+        api_key: str,
+        model: str,
+        sleep: Callable[[float], None] = time.sleep,
+        notify: Callable[[str], None] = lambda message: None,
     ) -> None:
         self._http = http
         self._api_key = api_key
         self._model = model
         self._sleep = sleep
+        self._notify = notify
 
     @property
     def model(self) -> str:
@@ -113,26 +124,35 @@ class GeminiDrafter:
                 response = self._http.post(
                     API_URL.format(model=self._model), json=body, headers={"x-goog-api-key": self._api_key}
                 )
+            except (httpx2.ConnectError, httpx2.ConnectTimeout) as error:
+                problem, wait = f"falha de conexão: {error!r}", _backoff(attempt)
             except httpx2.TransportError as error:
-                problem, wait = (
-                    f"falha de rede: {error!r}",
-                    RETRY_WAITS_SECONDS[min(attempt, len(RETRY_WAITS_SECONDS) - 1)],
-                )
+                # O pedido chegou: o Google pode ainda estar gerando e contando a cota. Repetir mandaria as fontes
+                # inteiras de novo, gastando mais cota sem garantia de resposta.
+                raise DraftingError(
+                    f"o Gemini não respondeu a tempo ({error!r}); nada foi gravado, rode de novo mais tarde"
+                ) from error
             else:
                 if response.status_code == 200:
                     return _reply(_json(response))
                 error = _error(response)
                 if response.status_code == 429 and _is_daily_quota(error):
-                    raise DraftingError("cota diária gratuita do Gemini esgotada; tente amanhã")
+                    raise QuotaExhaustedError("cota diária gratuita do Gemini esgotada; tente amanhã")
                 if response.status_code != 429 and response.status_code < 500:
                     message = error.get("message", "")
                     raise DraftingError(f"o Gemini recusou o pedido (HTTP {response.status_code}): {message}")
                 message = str(error.get("message", "")).strip()
                 problem = f"HTTP {response.status_code}: {message}" if message else f"HTTP {response.status_code}"
-                wait = _retry_delay(error) or RETRY_WAITS_SECONDS[min(attempt, len(RETRY_WAITS_SECONDS) - 1)]
+                wait = _retry_delay(error) or _backoff(attempt)
             if attempt + 1 < MAX_ATTEMPTS:
-                self._sleep(min(wait, MAX_WAIT_SECONDS))
+                wait = min(wait, MAX_WAIT_SECONDS)
+                self._notify(f"Gemini indisponível ({problem}); nova tentativa em {wait:.0f} s")
+                self._sleep(wait)
         raise DraftingError(f"Gemini indisponível após {MAX_ATTEMPTS} tentativas ({problem})")
+
+
+def _backoff(attempt: int) -> float:
+    return RETRY_WAITS_SECONDS[min(attempt, len(RETRY_WAITS_SECONDS) - 1)]
 
 
 def _json(response: httpx2.Response) -> dict[str, Any]:

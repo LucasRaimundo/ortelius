@@ -10,7 +10,7 @@ from app.infrastructure.database.engine import create_db_engine
 from app.settings import get_settings
 from pipeline.texto import gemini, sources
 from pipeline.texto.draft import InvalidDraftError
-from pipeline.texto.gemini import DraftingError, GeminiDrafter
+from pipeline.texto.gemini import DraftingError, GeminiDrafter, QuotaExhaustedError
 from pipeline.texto.sources import SourceFetcher, SourceTextError
 from pipeline.texto.writer import TextRefusedError, generate_text
 
@@ -29,8 +29,13 @@ def main(argv: list[str] | None = None) -> int:
     engine = create_db_engine(settings.database_url.get_secret_value())
     failed = 0
     with sources.create_http_client() as source_http, gemini.create_http_client() as model_http:
-        drafter = GeminiDrafter(model_http, api_key=api_key, model=settings.draft_model)
-        for slug in args.slugs:
+        drafter = GeminiDrafter(
+            model_http,
+            api_key=api_key,
+            model=settings.draft_model,
+            notify=lambda message: print(f"...        {message}", flush=True),
+        )
+        for index, slug in enumerate(args.slugs):
             try:
                 message = generate_text(
                     slug,
@@ -41,6 +46,13 @@ def main(argv: list[str] | None = None) -> int:
                     progress=lambda step, slug=slug: print(f"...        {slug}: {step}", flush=True),
                 )
                 print(f"gerado     {slug}: {message}")
+            except QuotaExhaustedError as error:
+                remaining = args.slugs[index + 1 :]
+                failed += 1 + len(remaining)
+                print(f"falhou     {slug}: {error}")
+                if remaining:
+                    print(f"parado     sem tentar, para não gastar pedidos: {', '.join(remaining)}")
+                break
             except (TextRefusedError, SourceTextError, DraftingError, InvalidDraftError) as error:
                 failed += 1
                 print(f"falhou     {slug}: {error}")
