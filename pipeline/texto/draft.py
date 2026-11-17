@@ -154,12 +154,32 @@ def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSec
     return DraftSection(key=key, title=title, document=document, source_labels=labels)
 
 
+_EMPTY: tuple[object, ...] = (None, "", [], False)
+_FIELDS_BY_TYPE: Mapping[str, frozenset[str]] = {
+    "paragraph": frozenset({"type", "text"}),
+    "heading": frozenset({"type", "level", "text"}),
+    "list": frozenset({"type", "items", "ordered"}),
+    "quote": frozenset({"type", "text", "caption"}),
+}
+
+
 def _editor_blocks(raw: object, path: str) -> list[dict[str, Any]]:
     block = _object(raw, path)
     if block.get("type") == "paragraph" and block.get("text") is None and isinstance(block.get("items"), list):
         # O Ernie pôs o texto dos parágrafos no campo das listas; cada item vira um parágrafo, sem inventar nada.
         texts = [_string(item, f"{path}.items").strip() for item in _list(block.get("items"), path)]
         return [{"type": "paragraph", "data": {"text": _inline(text)}} for text in texts if text]
+    allowed = _FIELDS_BY_TYPE.get(str(block.get("type")))
+    if allowed is not None:
+        # Campo de outro tipo preenchido é ambíguo: o Ernie pôs uma nota em `text` e o conteúdo em `items`, e
+        # usar só um dos dois descartaria texto em silêncio.
+        foreign = sorted(
+            name for name, value in block.items() if name not in allowed and value not in (None, "", [], False)
+        )
+        if foreign:
+            raise InvalidDraftError(
+                f"{path}: bloco {block.get('type')!r} com campos de outro tipo: {', '.join(foreign)}"
+            )
     return [_editor_block(block, path)]
 
 

@@ -8,7 +8,6 @@ from typing import Any, cast
 
 import httpx2
 
-from pipeline.texto.draft import OUTPUT_SCHEMA
 from pipeline.texto.model import (
     SYSTEM_INSTRUCTION,
     DraftingError,
@@ -26,31 +25,56 @@ DEFAULT_MODEL = "nvidia/nemotron-3.5-super-vl:free"
 MAX_COMPLETION_TOKENS = 65_536
 
 
-def strict_schema(schema: Mapping[str, Any]) -> dict[str, Any]:
-    """Versão do schema aceita pelo modo estrito: todo campo obrigatório, os opcionais aceitando null."""
-    node = dict(schema)
-    if node.get("type") == "object":
-        required = set(cast(list[str], node.get("required", [])))
-        properties = cast(dict[str, Any], node.get("properties", {}))
-        node["properties"] = {
-            name: strict_schema(spec) if name in required else _nullable(strict_schema(spec))
-            for name, spec in properties.items()
-        }
-        node["required"] = list(properties)
-        node["additionalProperties"] = False
-    if node.get("type") == "array" and "items" in node:
-        node["items"] = strict_schema(cast(dict[str, Any], node["items"]))
-    return node
+# Modelos menores erram com blocos de tipos variados: o Ernie misturou campos (nota em `text`, conteúdo em
+# `items`) e, com um schema por tipo, escreveu tudo como listas. Só parágrafos não deixa onde errar; o revisor
+# estrutura no painel. O schema segue o modo estrito: todo campo obrigatório e nenhum campo extra.
+PARAGRAPHS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string", "description": "Uma ou duas frases para o cartão do globo e a busca."},
+        "description": {"type": "string", "description": "Introdução da página, um ou dois parágrafos."},
+        "sections": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                    "paragraphs": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["title", "sources", "paragraphs"],
+                "additionalProperties": False,
+            },
+        },
+        "points_to_check": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["summary", "description", "sections", "points_to_check"],
+    "additionalProperties": False,
+}
+
+PARAGRAPHS_INSTRUCTION = (
+    '\n\nNesta resposta, cada seção tem uma lista de parágrafos em "paragraphs", cada um um texto corrido. '
+    "Não use títulos internos, listas nem citações em bloco."
+)
 
 
-def _nullable(schema: dict[str, Any]) -> dict[str, Any]:
-    node = {**schema, "type": [schema["type"], "null"]}
-    if "enum" in node:
-        node["enum"] = [*node["enum"], None]
-    return node
-
-
-STRICT_SCHEMA = strict_schema(OUTPUT_SCHEMA)
+def to_blocks_payload(payload: object) -> object:
+    """Converte a resposta só de parágrafos no formato de blocos que o validador do pipeline entende."""
+    if not isinstance(payload, dict):
+        return payload
+    answer = cast(dict[str, Any], payload)
+    sections = answer.get("sections")
+    if not isinstance(sections, list):
+        return answer
+    converted: list[object] = []
+    for raw in cast(list[object], sections):
+        data = cast(dict[str, Any], raw) if isinstance(raw, dict) else None
+        if data is not None and isinstance(data.get("paragraphs"), list):
+            blocks = [{"type": "paragraph", "text": text} for text in cast(list[object], data["paragraphs"])]
+            converted.append({key: value for key, value in data.items() if key != "paragraphs"} | {"blocks": blocks})
+        else:
+            converted.append(cast(object, raw))
+    return answer | {"sections": converted}
 
 
 def _is_daily_quota(error: Mapping[str, Any]) -> bool:
@@ -85,13 +109,13 @@ class OpenRouterDrafter:
         body = {
             "model": self._model,
             "messages": [
-                {"role": "system", "content": SYSTEM_INSTRUCTION},
+                {"role": "system", "content": SYSTEM_INSTRUCTION + PARAGRAPHS_INSTRUCTION},
                 {"role": "user", "content": build_prompt(request)},
             ],
             # Sem strict, o formato é só sugerido: o Ernie omitiu campos obrigatórios em 2 de 5 respostas.
             "response_format": {
                 "type": "json_schema",
-                "json_schema": {"name": "rascunho", "strict": True, "schema": STRICT_SCHEMA},
+                "json_schema": {"name": "rascunho", "strict": True, "schema": PARAGRAPHS_SCHEMA},
             },
             "max_tokens": MAX_COMPLETION_TOKENS,
             "reasoning": {"effort": "low", "exclude": True},
@@ -137,4 +161,4 @@ def _parse_reply(body: dict[str, Any]) -> ModelReply:
         raise DraftingError("o modelo devolveu texto que não é o JSON pedido") from error
     usage = {k: v for k, v in cast(dict[str, Any], body.get("usage", {})).items() if isinstance(v, int)}
     model_version = f"{body.get('model', '')} via {body.get('provider', '?')}"
-    return ModelReply(payload=payload, model_version=model_version, usage=usage)
+    return ModelReply(payload=to_blocks_payload(payload), model_version=model_version, usage=usage)

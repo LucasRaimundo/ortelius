@@ -1,12 +1,14 @@
 import json
-from typing import Any, cast
+from typing import Any
 
 import httpx2
 import pytest
 
-from pipeline.texto.draft import OUTPUT_SCHEMA
+from app.domain.content import Paragraph, TextRun
+from app.infrastructure.editorjs import to_blocks
+from pipeline.texto.draft import parse_draft
 from pipeline.texto.model import DraftingError, QuotaExhaustedError, create_http_client
-from pipeline.texto.openrouter import DEFAULT_MODEL, OpenRouterDrafter, strict_schema
+from pipeline.texto.openrouter import DEFAULT_MODEL, OpenRouterDrafter
 from tests.pipeline.test_texto_gemini import ANSWER, REQUEST
 
 API_KEY = "sk-or-v1-teste"
@@ -119,25 +121,21 @@ def test_upstream_error_inside_a_successful_response_is_retried() -> None:
     assert (len(requests), sleeps) == (2, [10.0])
 
 
-def objects_in(schema: dict[str, Any]) -> list[dict[str, Any]]:
-    found = [schema] if schema.get("type") == "object" else []
-    for child in [*schema.get("properties", {}).values(), schema.get("items")]:
-        if isinstance(child, dict):
-            found += objects_in(cast(dict[str, Any], child))
-    return found
-
-
-def test_strict_schema_requires_every_field_and_lets_optional_ones_be_null() -> None:
-    strict = strict_schema(OUTPUT_SCHEMA)
-
-    objects = objects_in(strict)
-    block = strict["properties"]["sections"]["items"]["properties"]["blocks"]["items"]
-    assert len(objects) == 3
-    assert all(o["additionalProperties"] is False and o["required"] == list(o["properties"]) for o in objects)
-    assert block["properties"]["type"]["type"] == "string"
-    assert block["properties"]["level"] == {
-        "type": ["integer", "null"],
-        "enum": [3, 4, None],
-        "description": "Só para heading.",
+def test_asks_only_for_paragraphs_and_hands_blocks_to_the_validator() -> None:
+    answer = {
+        "summary": "S",
+        "description": "D",
+        "sections": [{"title": "Origem", "sources": ["F1"], "paragraphs": ["Primeiro.", "Segundo."]}],
+        "points_to_check": [],
     }
-    assert OUTPUT_SCHEMA["properties"]["sections"]["items"]["required"] == ["title", "sources", "blocks"]
+    drafter, requests, _ = drafter_answering(httpx2.Response(200, json=completion(json.dumps(answer))))
+
+    reply = drafter.draft(REQUEST)
+
+    schema = json.loads(requests[0].content)["response_format"]["json_schema"]["schema"]
+    assert schema["properties"]["sections"]["items"]["required"] == ["title", "sources", "paragraphs"]
+    draft = parse_draft(reply.payload, {"F1"})
+    assert to_blocks(draft.sections[0].document) == [
+        Paragraph(text=(TextRun("Primeiro."),)),
+        Paragraph(text=(TextRun("Segundo."),)),
+    ]

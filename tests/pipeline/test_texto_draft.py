@@ -133,3 +133,15 @@ def test_accepts_nulls_that_the_strict_schema_sends_for_unused_fields() -> None:
     draft = parse_draft(with_section(key=None, blocks=[block]), LABELS)
 
     assert to_blocks(draft.sections[0].document) == [Paragraph(text=(TextRun("Texto."),))]
+
+
+@pytest.mark.parametrize(
+    ("block", "foreign"),
+    [
+        ({"type": "paragraph", "text": "Nota do modelo.", "items": ["O texto de verdade."]}, "items"),
+        ({"type": "list", "items": ["a"], "text": "x", "caption": "y"}, "caption, text"),
+    ],
+)
+def test_refuses_blocks_that_mix_fields_of_another_type(block: dict[str, Any], foreign: str) -> None:
+    with pytest.raises(InvalidDraftError, match=f"com campos de outro tipo: {foreign}"):
+        parse_draft(with_section(blocks=[block]), LABELS)
