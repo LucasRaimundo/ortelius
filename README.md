@@ -79,13 +79,15 @@ uv run python -m pipeline.wikidata Q123 --tipo concept  # quando o P31 do item n
 
 ## Gerar texto a partir das fontes
 
-Escreve resumo, introdução e seções de um rascunho com o Gemini (camada gratuita do Google AI Studio), a partir
-do texto das fontes citadas. Precisa de `ORTELIUS_GEMINI_API_KEY` no `.env`; o modelo vem de
-`ORTELIUS_DRAFT_MODEL`.
+Escreve resumo, introdução e seções de um rascunho a partir do texto das fontes citadas, com um modelo gratuito:
+o Gemini (Google AI Studio) ou um modelo `:free` do OpenRouter. O provedor vem de `ORTELIUS_DRAFT_PROVIDER` ou de
+`--provedor`; cada um precisa da sua chave no `.env` (`ORTELIUS_GEMINI_API_KEY`, `ORTELIUS_OPENROUTER_API_KEY`).
+`ORTELIUS_DRAFT_MODEL` troca o modelo; vazio usa o padrão do provedor.
 
 ```bash
 uv run python -m pipeline.texto augusto batalha-de-alesia
 uv run python -m pipeline.texto augusto --substituir   # apaga introdução e seções e gera de novo
+uv run python -m pipeline.texto virgilio --provedor openrouter
 ```
 
 - O modelo só lê fontes com **licença do texto** aberta (domínio público, CC0, CC BY): o trecho colado na
@@ -97,6 +99,9 @@ uv run python -m pipeline.texto augusto --substituir   # apaga introdução e se
   substituído; o anterior fica na origem do rascunho.
 - A resposta passa pela mesma validação da API antes de gravar. A origem do rascunho registra modelo, fontes
   lidas (endereço e hash), fontes usadas por seção, tokens e os **pontos a conferir**.
+- Sobrecarga do provedor (503) e limite de pedidos (429) fazem esperar e tentar de novo, com aviso. Se o modelo
+  aceitar o pedido e não responder em 5 minutos, a entidade falha sem reenviar as fontes; se a cota diária
+  acabar, o lote para sem gastar pedidos com as entidades seguintes.
 - O texto gerado pode afirmar o que as fontes não dizem, inclusive fora dos pontos a conferir. Confira cada data,
   nome e afirmação contra as fontes antes de publicar.
 

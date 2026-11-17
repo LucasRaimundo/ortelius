@@ -5,19 +5,19 @@ pelo mesmo conversor da API (`to_blocks`) antes de ser aceito: o que a página n
 """
 
 import html
-import re
 import time
 from collections.abc import Collection, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, cast
 
 from app.domain.content import InvalidContentError
-from app.infrastructure.database.models import SLUG_PATTERN
 from app.infrastructure.editorjs import to_blocks
+from pipeline.wikidata.mapping import slugify
 
 # Versão do Editor.js usada pelo painel (Directus 12.6.1); o painel abre o documento como se ele mesmo o tivesse salvo.
 EDITORJS_VERSION = "2.31.2"
 MAX_SECTIONS = 12
+MAX_KEY_LENGTH = 80
 
 OUTPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -31,7 +31,6 @@ OUTPUT_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "key": {"type": "string", "description": "Minúsculas sem acento e hífens, ex.: origem-e-familia"},
                     "title": {"type": "string"},
                     "sources": {
                         "type": "array",
@@ -55,7 +54,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                         },
                     },
                 },
-                "required": ["key", "title", "sources", "blocks"],
+                "required": ["title", "sources", "blocks"],
             },
         },
         "points_to_check": {
@@ -96,8 +95,10 @@ def parse_draft(payload: object, source_labels: Collection[str]) -> TextDraft:
     sections: list[DraftSection] = []
     for index, raw in enumerate(sections_data):
         section = _section(raw, f"sections[{index}]", source_labels)
-        if any(existing.key == section.key for existing in sections):
-            raise InvalidDraftError(f"sections[{index}].key: chave repetida {section.key!r}")
+        used = {existing.key for existing in sections}
+        if section.key in used:
+            suffix = next(n for n in range(2, MAX_SECTIONS + 2) if _with_suffix(section.key, n) not in used)
+            section = replace(section, key=_with_suffix(section.key, suffix))
         sections.append(section)
     return TextDraft(
         summary=_text(data, "summary", "resposta"),
@@ -112,29 +113,77 @@ def _points(raw: object) -> tuple[str, ...]:
     return tuple(point for point in points if point)
 
 
+def _section_key(title: str, path: str) -> str:
+    """A chave é técnica e sai do título, não do modelo.
+
+    Modelos menores devolveram chaves fora do formato (`origens_e_nascimento`) e até sem sentido
+    (`0x715876a9ed60`); derivar do título é determinístico e legível no painel.
+    """
+    key = slugify(title)[:MAX_KEY_LENGTH].rstrip("-")
+    if not key:
+        raise InvalidDraftError(f"{path}.key: não foi possível formar uma chave a partir de {title!r}")
+    return key
+
+
+def _with_suffix(key: str, number: int) -> str:
+    suffix = f"-{number}"
+    return f"{key[: MAX_KEY_LENGTH - len(suffix)].rstrip('-')}{suffix}"
+
+
 def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSection:
     data = _object(raw, path)
-    key = _text(data, "key", path)
-    if not re.fullmatch(SLUG_PATTERN, key):
-        raise InvalidDraftError(f"{path}.key: {key!r} não usa só minúsculas sem acento, números e hífens")
+    title = _text(data, "title", path)[:180]
+    key = _section_key(title, path)
     labels = tuple(dict.fromkeys(_string(label, f"{path}.sources") for label in _list(data.get("sources"), path)))
     if not labels:
         raise InvalidDraftError(f"{path}.sources: a seção não indica nenhuma fonte")
     unknown = [label for label in labels if label not in source_labels]
     if unknown:
         raise InvalidDraftError(f"{path}.sources: fontes que não foram fornecidas: {', '.join(unknown)}")
-    blocks = [_editor_block(block, f"{path}.blocks[{i}]") for i, block in enumerate(_list(data.get("blocks"), path))]
+    blocks = [
+        converted
+        for i, block in enumerate(_list(data.get("blocks"), path))
+        for converted in _editor_blocks(block, f"{path}.blocks[{i}]")
+    ]
     document: dict[str, Any] = {"time": int(time.time() * 1000), "version": EDITORJS_VERSION, "blocks": blocks}
     try:
         if not to_blocks(document):
             raise InvalidDraftError(f"{path}.blocks: seção sem conteúdo")
     except InvalidContentError as error:
         raise InvalidDraftError(f"{path}.blocks: {error}") from error
-    return DraftSection(key=key, title=_text(data, "title", path)[:180], document=document, source_labels=labels)
+    return DraftSection(key=key, title=title, document=document, source_labels=labels)
 
 
-def _editor_block(raw: object, path: str) -> dict[str, Any]:
+_EMPTY: tuple[object, ...] = (None, "", [], False)
+_FIELDS_BY_TYPE: Mapping[str, frozenset[str]] = {
+    "paragraph": frozenset({"type", "text"}),
+    "heading": frozenset({"type", "level", "text"}),
+    "list": frozenset({"type", "items", "ordered"}),
+    "quote": frozenset({"type", "text", "caption"}),
+}
+
+
+def _editor_blocks(raw: object, path: str) -> list[dict[str, Any]]:
     block = _object(raw, path)
+    if block.get("type") == "paragraph" and block.get("text") is None and isinstance(block.get("items"), list):
+        # O Ernie pôs o texto dos parágrafos no campo das listas; cada item vira um parágrafo, sem inventar nada.
+        texts = [_string(item, f"{path}.items").strip() for item in _list(block.get("items"), path)]
+        return [{"type": "paragraph", "data": {"text": _inline(text)}} for text in texts if text]
+    allowed = _FIELDS_BY_TYPE.get(str(block.get("type")))
+    if allowed is not None:
+        # Campo de outro tipo preenchido é ambíguo: o Ernie pôs uma nota em `text` e o conteúdo em `items`, e
+        # usar só um dos dois descartaria texto em silêncio.
+        foreign = sorted(
+            name for name, value in block.items() if name not in allowed and value not in (None, "", [], False)
+        )
+        if foreign:
+            raise InvalidDraftError(
+                f"{path}: bloco {block.get('type')!r} com campos de outro tipo: {', '.join(foreign)}"
+            )
+    return [_editor_block(block, path)]
+
+
+def _editor_block(block: Mapping[str, object], path: str) -> dict[str, Any]:
     match block.get("type"):
         case "paragraph":
             return {"type": "paragraph", "data": {"text": _inline(_text(block, "text", path))}}

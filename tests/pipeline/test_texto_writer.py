@@ -1,4 +1,6 @@
+import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -9,9 +11,10 @@ from app.domain.entities import WIKIDATA_SOURCE_ID, DraftRunKind, PublicationSta
 from app.infrastructure.database.models import EntityDraftRunRow, EntityRow, EntitySectionRow, EntitySourceRow
 from app.infrastructure.editorjs import to_blocks
 from app.settings import get_settings
+from pipeline.texto import __main__ as texto_main
 from pipeline.texto.__main__ import main
 from pipeline.texto.draft import InvalidDraftError
-from pipeline.texto.gemini import DraftRequest, ModelReply
+from pipeline.texto.model import DraftRequest, ModelReply, QuotaExhaustedError
 from pipeline.texto.sources import SourceTextError
 from pipeline.texto.writer import TextRefusedError, generate_text
 from tests.factories import add_entity, add_section, add_source, cite
@@ -183,3 +186,42 @@ def test_command_requires_the_api_key(monkeypatch: pytest.MonkeyPatch, capsys: p
         get_settings.cache_clear()
     assert exit_info.value.code == 2
     assert "ORTELIUS_GEMINI_API_KEY" in capsys.readouterr().err
+
+
+def test_command_stops_the_batch_when_the_daily_quota_ends(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    attempted: list[str] = []
+
+    def quota_ends_on_second(slug: str, **_: Any) -> str:
+        attempted.append(slug)
+        if slug == "vercingetorix":
+            raise QuotaExhaustedError("cota diária gratuita do Gemini esgotada; tente amanhã")
+        return "1 seção(ões), 0 ponto(s) a conferir"
+
+    monkeypatch.setenv("ORTELIUS_GEMINI_API_KEY", "chave-de-teste")
+    monkeypatch.setattr(texto_main, "generate_text", quota_ends_on_second)
+    get_settings.cache_clear()
+    try:
+        code = main(["batalha-de-alesia", "vercingetorix", "virgilio", "marco-antonio"])
+    finally:
+        get_settings.cache_clear()
+
+    output = capsys.readouterr().out
+    assert (code, attempted) == (1, ["batalha-de-alesia", "vercingetorix"])
+    assert "parado     sem tentar, para não gastar pedidos: virgilio, marco-antonio" in output
+    assert "1 de 4 entidade(s) com texto gerado" in output
+
+
+def test_saves_the_rejected_answer_for_diagnosis(
+    session_factory: Callable[[], Session], augusto: EntityRow, tmp_path: Path
+) -> None:
+    bad: dict[str, Any] = {**ANSWER, "sections": [{**ANSWER["sections"][0], "sources": []}]}
+
+    with pytest.raises(InvalidDraftError, match="resposta do modelo salva em") as error:
+        generate(session_factory, FakeDrafter(bad), rejected_dir=tmp_path)
+
+    [saved] = tmp_path.iterdir()
+    assert str(saved) in str(error.value)
+    record = json.loads(saved.read_text())
+    assert (record["model"], record["payload"]) == ("gemini-3.8-flash", bad)
