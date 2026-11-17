@@ -5,19 +5,19 @@ pelo mesmo conversor da API (`to_blocks`) antes de ser aceito: o que a página n
 """
 
 import html
-import re
 import time
 from collections.abc import Collection, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, cast
 
 from app.domain.content import InvalidContentError
-from app.infrastructure.database.models import SLUG_PATTERN
 from app.infrastructure.editorjs import to_blocks
+from pipeline.wikidata.mapping import slugify
 
 # Versão do Editor.js usada pelo painel (Directus 12.6.1); o painel abre o documento como se ele mesmo o tivesse salvo.
 EDITORJS_VERSION = "2.31.2"
 MAX_SECTIONS = 12
+MAX_KEY_LENGTH = 80
 
 OUTPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -55,7 +55,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                         },
                     },
                 },
-                "required": ["key", "title", "sources", "blocks"],
+                "required": ["title", "sources", "blocks"],
             },
         },
         "points_to_check": {
@@ -96,8 +96,10 @@ def parse_draft(payload: object, source_labels: Collection[str]) -> TextDraft:
     sections: list[DraftSection] = []
     for index, raw in enumerate(sections_data):
         section = _section(raw, f"sections[{index}]", source_labels)
-        if any(existing.key == section.key for existing in sections):
-            raise InvalidDraftError(f"sections[{index}].key: chave repetida {section.key!r}")
+        used = {existing.key for existing in sections}
+        if section.key in used:
+            suffix = next(n for n in range(2, MAX_SECTIONS + 2) if _with_suffix(section.key, n) not in used)
+            section = replace(section, key=_with_suffix(section.key, suffix))
         sections.append(section)
     return TextDraft(
         summary=_text(data, "summary", "resposta"),
@@ -112,11 +114,28 @@ def _points(raw: object) -> tuple[str, ...]:
     return tuple(point for point in points if point)
 
 
+def _section_key(proposed: object, title: str, path: str) -> str:
+    """A chave é técnica: o pipeline a normaliza em vez de recusar o texto por causa dela.
+
+    Modelos menores ignoram o formato pedido (ex.: `origens_e_nascimento`); o título serve quando a sugestão
+    não aproveita nada.
+    """
+    key = (slugify(proposed) if isinstance(proposed, str) else "") or slugify(title)
+    key = key[:MAX_KEY_LENGTH].rstrip("-")
+    if not key:
+        raise InvalidDraftError(f"{path}.key: não foi possível formar uma chave a partir de {title!r}")
+    return key
+
+
+def _with_suffix(key: str, number: int) -> str:
+    suffix = f"-{number}"
+    return f"{key[: MAX_KEY_LENGTH - len(suffix)].rstrip('-')}{suffix}"
+
+
 def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSection:
     data = _object(raw, path)
-    key = _text(data, "key", path)
-    if not re.fullmatch(SLUG_PATTERN, key):
-        raise InvalidDraftError(f"{path}.key: {key!r} não usa só minúsculas sem acento, números e hífens")
+    title = _text(data, "title", path)[:180]
+    key = _section_key(data.get("key"), title, path)
     labels = tuple(dict.fromkeys(_string(label, f"{path}.sources") for label in _list(data.get("sources"), path)))
     if not labels:
         raise InvalidDraftError(f"{path}.sources: a seção não indica nenhuma fonte")
@@ -130,7 +149,7 @@ def _section(raw: object, path: str, source_labels: Collection[str]) -> DraftSec
             raise InvalidDraftError(f"{path}.blocks: seção sem conteúdo")
     except InvalidContentError as error:
         raise InvalidDraftError(f"{path}.blocks: {error}") from error
-    return DraftSection(key=key, title=_text(data, "title", path)[:180], document=document, source_labels=labels)
+    return DraftSection(key=key, title=title, document=document, source_labels=labels)
 
 
 def _editor_block(raw: object, path: str) -> dict[str, Any]:

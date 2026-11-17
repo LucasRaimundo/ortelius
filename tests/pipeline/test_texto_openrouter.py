@@ -47,6 +47,7 @@ def test_sends_the_schema_and_records_which_provider_answered() -> None:
     assert body["model"] == DEFAULT_MODEL
     assert body["response_format"]["json_schema"]["schema"]["required"][0] == "summary"
     assert [message["role"] for message in body["messages"]] == ["system", "user"]
+    assert body["reasoning"] == {"effort": "low", "exclude": True}
     assert (reply.payload, reply.model_version) == (ANSWER, f"{DEFAULT_MODEL} via Nvidia")
     assert reply.usage["total_tokens"] == 520
 
@@ -74,6 +75,16 @@ def test_turns_broken_answers_into_reasons(body: dict[str, Any], message: str) -
     drafter, _, _ = drafter_answering(httpx2.Response(200, json=body))
 
     with pytest.raises(DraftingError, match=message):
+        drafter.draft(REQUEST)
+
+
+def test_says_when_the_model_spent_the_whole_limit_thinking() -> None:
+    body = completion(finish="length")
+    body["choices"][0]["message"]["content"] = ""
+    body["usage"]["completion_tokens_details"] = {"reasoning_tokens": 65536}
+    drafter, _, _ = drafter_answering(httpx2.Response(200, json=body))
+
+    with pytest.raises(DraftingError, match="gastou todo o limite raciocinando"):
         drafter.draft(REQUEST)
 
 

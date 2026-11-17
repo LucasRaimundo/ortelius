@@ -10,7 +10,6 @@ import httpx2
 
 from pipeline.texto.draft import OUTPUT_SCHEMA
 from pipeline.texto.model import (
-    MAX_OUTPUT_TOKENS,
     SYSTEM_INSTRUCTION,
     DraftingError,
     DraftRequest,
@@ -22,6 +21,9 @@ from pipeline.texto.model import (
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "nvidia/nemotron-3.5-super-vl:free"
+# Modelos de raciocínio contam o pensamento como saída: sem limite, o Nemotron gastou os 32 mil tokens pensando
+# e não escreveu a resposta. O teto maior deixa espaço ao texto mesmo com raciocínio.
+MAX_COMPLETION_TOKENS = 65_536
 
 
 def _is_daily_quota(error: Mapping[str, Any]) -> bool:
@@ -64,7 +66,8 @@ class OpenRouterDrafter:
                 "type": "json_schema",
                 "json_schema": {"name": "rascunho", "strict": False, "schema": OUTPUT_SCHEMA},
             },
-            "max_tokens": MAX_OUTPUT_TOKENS,
+            "max_tokens": MAX_COMPLETION_TOKENS,
+            "reasoning": {"effort": "low", "exclude": True},
         }
         reply = post_with_retries(
             self._http,
@@ -88,6 +91,11 @@ def _parse_reply(body: dict[str, Any]) -> ModelReply:
     choice = choices[0]
     reason = choice.get("finish_reason")
     if reason == "length":
+        details = cast(dict[str, Any], cast(dict[str, Any], body.get("usage", {})).get("completion_tokens_details", {}))
+        if not cast(dict[str, Any], choice["message"]).get("content") and details.get("reasoning_tokens"):
+            raise DraftingError(
+                "o modelo gastou todo o limite raciocinando e não escreveu a resposta; troque de modelo"
+            )
         raise DraftingError("resposta cortada pelo limite de tamanho; reduza as fontes ou peça menos seções")
     if reason == "content_filter":
         raise DraftingError("o modelo recusou responder (content_filter)")
