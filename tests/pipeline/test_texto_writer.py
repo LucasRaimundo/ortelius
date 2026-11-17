@@ -12,7 +12,7 @@ from app.settings import get_settings
 from pipeline.texto import __main__ as texto_main
 from pipeline.texto.__main__ import main
 from pipeline.texto.draft import InvalidDraftError
-from pipeline.texto.gemini import DraftRequest, ModelReply, QuotaExhaustedError
+from pipeline.texto.model import DraftRequest, ModelReply, QuotaExhaustedError
 from pipeline.texto.sources import SourceTextError
 from pipeline.texto.writer import TextRefusedError, generate_text
 from tests.factories import add_entity, add_section, add_source, cite

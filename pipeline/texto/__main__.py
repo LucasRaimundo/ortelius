@@ -3,14 +3,15 @@
 import argparse
 import sys
 
+import httpx2
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from app.infrastructure.database.engine import create_db_engine
-from app.settings import get_settings
-from pipeline.texto import gemini, sources
+from app.settings import Settings, get_settings
+from pipeline.texto import gemini, openrouter, sources
 from pipeline.texto.draft import InvalidDraftError
-from pipeline.texto.gemini import DraftingError, GeminiDrafter, QuotaExhaustedError
+from pipeline.texto.model import DraftingError, QuotaExhaustedError, TextDrafter, create_http_client
 from pipeline.texto.sources import SourceFetcher, SourceTextError
 from pipeline.texto.writer import TextRefusedError, generate_text
 
@@ -19,22 +20,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pipeline.texto", description=__doc__)
     parser.add_argument("slugs", nargs="+", metavar="SLUG", help="endereço da entidade em rascunho")
     parser.add_argument("--substituir", action="store_true", help="apaga introdução e seções existentes e gera de novo")
+    parser.add_argument("--provedor", choices=["gemini", "openrouter"], help="sobrepõe ORTELIUS_DRAFT_PROVIDER")
     args = parser.parse_args(argv)
 
     settings = get_settings()
-    api_key = settings.gemini_api_key.get_secret_value() if settings.gemini_api_key else ""
+    provider = args.provedor or settings.draft_provider
+    secret = settings.gemini_api_key if provider == "gemini" else settings.openrouter_api_key
+    api_key = secret.get_secret_value() if secret else ""
     if not api_key:
-        parser.error("ORTELIUS_GEMINI_API_KEY não está no .env")
+        parser.error(f"ORTELIUS_{provider.upper()}_API_KEY não está no .env")
 
     engine = create_db_engine(settings.database_url.get_secret_value())
     failed = 0
-    with sources.create_http_client() as source_http, gemini.create_http_client() as model_http:
-        drafter = GeminiDrafter(
-            model_http,
-            api_key=api_key,
-            model=settings.draft_model,
-            notify=lambda message: print(f"...        {message}", flush=True),
-        )
+    with sources.create_http_client() as source_http, create_http_client() as model_http:
+        drafter = _drafter(provider, settings, model_http, api_key)
         for index, slug in enumerate(args.slugs):
             try:
                 message = generate_text(
@@ -65,6 +64,18 @@ def main(argv: list[str] | None = None) -> int:
         f"{done} de {len(args.slugs)} entidade(s) com texto gerado; confira cada afirmação contra as fontes no painel."
     )
     return 1 if failed else 0
+
+
+def _drafter(provider: str, settings: Settings, http: httpx2.Client, api_key: str) -> TextDrafter:
+    def notify(message: str) -> None:
+        print(f"...        {message}", flush=True)
+
+    if provider == "openrouter":
+        model = settings.draft_model or openrouter.DEFAULT_MODEL
+        return openrouter.OpenRouterDrafter(http, api_key=api_key, model=model, notify=notify)
+    return gemini.GeminiDrafter(
+        http, api_key=api_key, model=settings.draft_model or gemini.DEFAULT_MODEL, notify=notify
+    )
 
 
 if __name__ == "__main__":

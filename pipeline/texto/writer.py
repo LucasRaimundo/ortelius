@@ -20,7 +20,7 @@ from app.infrastructure.database.models import (
     SourceRow,
 )
 from pipeline.texto.draft import TextDraft, parse_draft
-from pipeline.texto.gemini import DraftRequest, ModelReply, TextDrafter
+from pipeline.texto.model import DraftRequest, ModelReply, TextDrafter
 from pipeline.texto.sources import Citation, GatheredSources, gather_sources
 
 

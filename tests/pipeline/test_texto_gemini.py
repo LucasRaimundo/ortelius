@@ -5,14 +5,8 @@ from uuid import uuid4
 import httpx2
 import pytest
 
-from pipeline.texto.gemini import (
-    DraftingError,
-    DraftRequest,
-    GeminiDrafter,
-    QuotaExhaustedError,
-    build_prompt,
-    create_http_client,
-)
+from pipeline.texto.gemini import GeminiDrafter
+from pipeline.texto.model import DraftingError, DraftRequest, QuotaExhaustedError, build_prompt, create_http_client
 from pipeline.texto.sources import SourceText
 
 API_KEY = "chave-de-teste"
