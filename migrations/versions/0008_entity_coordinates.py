@@ -7,7 +7,7 @@ recalculam o ponto; ponto alterado (clique no mapa, importador do Wikidata) reca
 mudarem na mesma escrita, valem as coordenadas, que são digitadas de propósito.
 
 As colunas são preenchidas antes de o trigger existir, para o arredondamento a 6 casas (cerca de 10 cm) não alterar
-os pontos já gravados.
+os pontos já gravados, e com `trg_entities_updated_at` desligado: preencher um espelho não é edição de conteúdo.
 
 Revision ID: 0008
 Revises: 0007
@@ -33,9 +33,11 @@ def upgrade() -> None:
             ADD CONSTRAINT ck_entities_longitude_range CHECK (longitude BETWEEN -180 AND 180),
             ADD CONSTRAINT ck_entities_coordinates_together CHECK ((latitude IS NULL) = (longitude IS NULL));
 
+        ALTER TABLE entities DISABLE TRIGGER trg_entities_updated_at;
         UPDATE entities
         SET latitude = round(ST_Y(location)::numeric, 6), longitude = round(ST_X(location)::numeric, 6)
         WHERE location IS NOT NULL;
+        ALTER TABLE entities ENABLE TRIGGER trg_entities_updated_at;
 
         CREATE FUNCTION sync_entity_coordinates() RETURNS trigger LANGUAGE plpgsql AS $$
         DECLARE

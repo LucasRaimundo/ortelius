@@ -125,8 +125,8 @@ def test_migration_fills_coordinates_of_points_already_saved(db_engine: Engine) 
             command.downgrade(config, "0007")
             connection.execute(
                 text(
-                    "INSERT INTO entities (slug, name, entity_type, location) "
-                    "VALUES ('roma', 'Roma', 'place', "
+                    "INSERT INTO entities (slug, name, entity_type, updated_at, location) "
+                    "VALUES ('roma', 'Roma', 'place', '2026-01-01T00:00:00Z', "
                     "ST_SetSRID(ST_MakePoint(12.476648445898007, 41.89895263395056), 4326))"
                 )
             )
@@ -136,9 +136,13 @@ def test_migration_fills_coordinates_of_points_already_saved(db_engine: Engine) 
             command.upgrade(config, "head")
 
             row = connection.execute(
-                text("SELECT latitude, longitude, ST_X(location) FROM entities WHERE slug = 'roma'")
+                text(
+                    "SELECT latitude, longitude, ST_X(location), updated_at = '2026-01-01T00:00:00Z' "
+                    "FROM entities WHERE slug = 'roma'"
+                )
             ).one()
-            # O ponto gravado não é arredondado: o trigger só passa a existir depois do preenchimento.
-            assert tuple(row) == (Decimal("41.898953"), Decimal("12.476648"), 12.476648445898007)
+            # O ponto gravado não é arredondado (o trigger só passa a existir depois do preenchimento), e preencher o
+            # espelho não conta como edição.
+            assert tuple(row) == (Decimal("41.898953"), Decimal("12.476648"), 12.476648445898007, True)
         finally:
             transaction.rollback()

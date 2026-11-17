@@ -46,6 +46,12 @@ Core, o limite é de 3 usuários, incluindo o admin.
 do painel, sem conteúdo nem e-mails. O envio de dados do dono do projeto fica desligado
 (`PROJECT_OWNER_ENABLED=false`).
 
+**Localização:** clique no mapa ou digite latitude e longitude (graus decimais, positivas ao norte e a
+leste); ao salvar, um lado atualiza o outro. Quem mantém os dois iguais é um trigger do banco (migration
+`0008`), então vale também para o pipeline e para SQL direto. Se o mapa e as coordenadas mudarem no mesmo
+save, valem as coordenadas. A API lê só `location`. Depois de uma migration que cria colunas, reinicie o
+Directus (`docker compose --profile cms restart directus`) antes do applier: ele guarda o schema em cache.
+
 Toda coluna de domínio precisa estar configurada em `cms/config.json` (ou na lista `hidden_fields`); um
 teste falha caso contrário. Fora do ambiente local, o applier usa `DIRECTUS_URL`, `DIRECTUS_TOKEN` e
 `DIRECTUS_DB_URL`.
