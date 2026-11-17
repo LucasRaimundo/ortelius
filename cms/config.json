@@ -128,8 +128,8 @@
     "entity_draft_runs": {
       "meta": {
         "icon": "history",
-        "display_template": "{{created_at}} · {{kind}}",
-        "hidden": true,
+        "display_template": "{{entity_id.name}} · {{kind}} · {{created_at}}",
+        "hidden": false,
         "translations": [
           {
             "language": "pt-BR",
@@ -137,7 +137,9 @@
             "singular": "Execução do pipeline",
             "plural": "Execuções do pipeline"
           }
-        ]
+        ],
+        "sort": 4,
+        "note": "Execuções do pipeline: o que veio do Wikidata e do modelo, com os pontos a conferir. Somente leitura."
       }
     },
     "alembic_version": {
@@ -515,7 +517,7 @@
             }
           ],
           "hidden": false,
-          "note": "Preenchido pelo pipeline. Vazio para entidades cadastradas à mão.",
+          "note": "Preenchido pelo pipeline. Para ler os pontos a conferir, abra o menu \"Origem do rascunho\" e filtre pela entidade.",
           "options": {
             "template": "{{created_at}} · {{kind}}",
             "enableCreate": false,
