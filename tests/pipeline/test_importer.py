@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -108,6 +109,11 @@ def test_stores_location_and_creates_missing_relation_type_with_its_labels(db_se
         select(func.ST_X(EntityRow.location), func.ST_Y(EntityRow.location)).where(EntityRow.id == alesia.id)
     ).one()
     assert tuple(point) == pytest.approx((4.50027778, 47.53722222))
+    # O revisor vê no painel as coordenadas do ponto importado (trigger da migration 0008).
+    coordinates = db_session.execute(
+        select(EntityRow.latitude, EntityRow.longitude).where(EntityRow.id == alesia.id)
+    ).one()
+    assert tuple(coordinates) == (Decimal("47.537222"), Decimal("4.500278"))
     assert relations_of(db_session, alesia) == [("parte-de", "guerras-galicas")]
     relation_type = db_session.get(RelationTypeRow, "parte-de")
     assert relation_type is not None

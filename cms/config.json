@@ -358,16 +358,84 @@
             }
           ],
           "hidden": false,
-          "note": "Ponto do marcador no globo. Deixe vazio para entidades sem lugar físico (ex.: obras).",
+          "note": "Clique no mapa ou digite latitude e longitude nos campos abaixo; um atualiza o outro ao salvar.",
           "options": {
             "geometryType": "Point"
           }
         }
       },
-      "wikidata_id": {
+      "latitude": {
         "meta": {
           "interface": "input",
           "sort": 9,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Latitude"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "min": -90,
+            "max": 90,
+            "step": 1e-06
+          },
+          "note": "Graus decimais, de -90 a 90. Ex.: 31.2001 (Alexandria). Positiva ao norte do equador.",
+          "validation": {
+            "_and": [
+              {
+                "latitude": {
+                  "_between": [
+                    -90,
+                    90
+                  ]
+                }
+              }
+            ]
+          },
+          "validation_message": "Latitude vai de -90 a 90 graus."
+        }
+      },
+      "longitude": {
+        "meta": {
+          "interface": "input",
+          "sort": 10,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Longitude"
+            }
+          ],
+          "hidden": false,
+          "options": {
+            "min": -180,
+            "max": 180,
+            "step": 1e-06
+          },
+          "note": "Graus decimais, de -180 a 180. Ex.: 29.9187 (Alexandria). Positiva a leste de Greenwich.",
+          "validation": {
+            "_and": [
+              {
+                "longitude": {
+                  "_between": [
+                    -180,
+                    180
+                  ]
+                }
+              }
+            ]
+          },
+          "validation_message": "Longitude vai de -180 a 180 graus."
+        }
+      },
+      "wikidata_id": {
+        "meta": {
+          "interface": "input",
+          "sort": 11,
           "width": "half",
           "required": false,
           "translations": [
@@ -393,7 +461,7 @@
       "sections": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 10,
+          "sort": 12,
           "width": "full",
           "required": false,
           "translations": [
@@ -415,7 +483,7 @@
       "relations": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 11,
+          "sort": 13,
           "width": "full",
           "required": false,
           "translations": [
@@ -439,7 +507,7 @@
       "aliases": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 12,
+          "sort": 14,
           "width": "full",
           "required": false,
           "translations": [
@@ -462,7 +530,7 @@
       "citations": {
         "meta": {
           "interface": "list-m2m",
-          "sort": 13,
+          "sort": 15,
           "width": "full",
           "required": false,
           "translations": [
@@ -491,7 +559,7 @@
             "alias",
             "no-data"
           ],
-          "sort": 14,
+          "sort": 16,
           "width": "full",
           "required": false,
           "hidden": false,
@@ -506,7 +574,7 @@
       "draft_runs": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 15,
+          "sort": 17,
           "width": "full",
           "required": false,
           "readonly": true,

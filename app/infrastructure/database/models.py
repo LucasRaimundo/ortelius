@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
@@ -11,6 +12,7 @@ from sqlalchemy import (
     Index,
     Integer,
     MetaData,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -61,6 +63,9 @@ class EntityRow(_Timestamps, Base):
         CheckConstraint(_in_list("status", PublicationStatus), name="status"),
         CheckConstraint("ST_IsValid(location)", name="location_valid"),
         CheckConstraint("wikidata_id ~ '^Q[1-9][0-9]*$'", name="wikidata_id_format"),
+        CheckConstraint("latitude BETWEEN -90 AND 90", name="latitude_range"),
+        CheckConstraint("longitude BETWEEN -180 AND 180", name="longitude_range"),
+        CheckConstraint("(latitude IS NULL) = (longitude IS NULL)", name="coordinates_together"),
         Index("ix_entities_location", "location", postgresql_using="gist"),
     )
 
@@ -76,6 +81,9 @@ class EntityRow(_Timestamps, Base):
         Geometry("POINT", srid=4326, spatial_index=False), nullable=True
     )
     wikidata_id: Mapped[str | None] = mapped_column(String(16), unique=True)
+    # Espelho editável de `location`, sincronizado por trigger (migration 0008); a API lê só `location`.
+    latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
 
 
 class EntityAliasRow(_Timestamps, Base):
