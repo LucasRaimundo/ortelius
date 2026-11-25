@@ -30,6 +30,7 @@ def ensure_directus_files_table(session: Session) -> None:
         text("""
             CREATE TABLE IF NOT EXISTS directus.directus_files (
                 id UUID PRIMARY KEY, filename_disk VARCHAR(255), type VARCHAR(255),
+                title VARCHAR(255), description TEXT,
                 uploaded_on TIMESTAMPTZ NOT NULL DEFAULT now(), modified_on TIMESTAMPTZ, width INT, height INT
             )
         """)
@@ -43,16 +44,27 @@ def add_directus_file(
     modified_on: datetime | None = None,
     width: int | None = None,
     height: int | None = None,
+    title: str | None = None,
+    description: str | None = None,
 ) -> str:
     """Registro do arquivo como o Directus o guarda. Devolve o id, que é o que o domínio referencia."""
     ensure_directus_files_table(session)
     file_id = str(uuid4())
     session.execute(
         text("""
-            INSERT INTO directus.directus_files (id, filename_disk, type, modified_on, width, height)
-            VALUES (:id, :filename, 'image/jpeg', :modified_on, :width, :height)
+            INSERT INTO directus.directus_files
+                (id, filename_disk, type, modified_on, width, height, title, description)
+            VALUES (:id, :filename, 'image/jpeg', :modified_on, :width, :height, :title, :description)
         """),
-        {"id": file_id, "filename": filename, "modified_on": modified_on, "width": width, "height": height},
+        {
+            "id": file_id,
+            "filename": filename,
+            "modified_on": modified_on,
+            "width": width,
+            "height": height,
+            "title": title,
+            "description": description,
+        },
     )
     return file_id
 
