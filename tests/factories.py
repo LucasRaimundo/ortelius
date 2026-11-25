@@ -1,4 +1,5 @@
-from uuid import UUID
+from datetime import datetime
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -20,6 +21,40 @@ def add_source(session: Session, title: str = "Fonte de teste") -> SourceRow:
     session.add(source)
     session.flush()
     return source
+
+
+def ensure_directus_files_table(session: Session) -> None:
+    """No banco de testes o Directus nunca rodou: cria `directus_files` só com as colunas que o ortelius lê.
+    A tabela some com o rollback do teste."""
+    session.execute(
+        text("""
+            CREATE TABLE IF NOT EXISTS directus.directus_files (
+                id UUID PRIMARY KEY, filename_disk VARCHAR(255), type VARCHAR(255),
+                uploaded_on TIMESTAMPTZ NOT NULL DEFAULT now(), modified_on TIMESTAMPTZ, width INT, height INT
+            )
+        """)
+    )
+
+
+def add_directus_file(
+    session: Session,
+    filename: str,
+    *,
+    modified_on: datetime | None = None,
+    width: int | None = None,
+    height: int | None = None,
+) -> str:
+    """Registro do arquivo como o Directus o guarda. Devolve o id, que é o que o domínio referencia."""
+    ensure_directus_files_table(session)
+    file_id = str(uuid4())
+    session.execute(
+        text("""
+            INSERT INTO directus.directus_files (id, filename_disk, type, modified_on, width, height)
+            VALUES (:id, :filename, 'image/jpeg', :modified_on, :width, :height)
+        """),
+        {"id": file_id, "filename": filename, "modified_on": modified_on, "width": width, "height": height},
+    )
+    return file_id
 
 
 def add_media(session: Session, **overrides: object) -> MediaRow:

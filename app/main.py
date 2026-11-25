@@ -8,7 +8,10 @@ from sqlalchemy.orm import sessionmaker
 from app.api.errors import register_error_handlers
 from app.api.health import router as health_router
 from app.api.v1 import router as v1_router
+from app.api.v1.media import MediaFiles
 from app.infrastructure.database.engine import create_db_engine
+from app.infrastructure.media_storage import LocalMediaStorage
+from app.infrastructure.rendition_cache import RenditionCache
 from app.settings import Settings, get_settings
 
 
@@ -23,6 +26,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Ortelius", version="0.1.0", lifespan=lifespan)
     app.state.session_factory = sessionmaker(engine)
+    app.state.media_files = (
+        MediaFiles(LocalMediaStorage(settings.media_root), RenditionCache(settings.media_cache_dir))
+        if settings.media_root is not None
+        else None
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allowed_origins,

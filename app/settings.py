@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -15,6 +16,10 @@ class Settings(BaseSettings):
     draft_model: str | None = None
     gemini_api_key: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None
+    # Pasta com os originais enviados pelo painel (no ambiente local, var/uploads). Vazio: a API não serve imagens.
+    media_root: Path | None = None
+    # Onde ficam os tamanhos já gerados. Pode ser apagada a qualquer momento: tudo é regenerado sob demanda.
+    media_cache_dir: Path = Path("var/media-cache")
 
 
 @lru_cache
