@@ -3,12 +3,13 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.domain.entities import EntityType, PublicationStatus, SourceType
+from app.domain.entities import EntityType, ImageLicense, PublicationStatus, SourceType
 from app.infrastructure.database.models import (
     EntityRelationRow,
     EntityRow,
     EntitySectionRow,
     EntitySourceRow,
+    MediaRow,
     RelationTypeRow,
     SourceRow,
 )
@@ -19,6 +20,22 @@ def add_source(session: Session, title: str = "Fonte de teste") -> SourceRow:
     session.add(source)
     session.flush()
     return source
+
+
+def add_media(session: Session, **overrides: object) -> MediaRow:
+    values: dict[str, object] = {
+        "file_id": "6f1c2d3e-0000-4000-8000-000000000001",
+        "alt_text": "Mosaico com um poeta sentado entre duas musas",
+        "caption": "Mosaico de Virgílio entre Clio e Melpômene",
+        "author": "David Bjorgen",
+        "license": ImageLicense.PUBLIC_DOMAIN,
+        "source_url": "https://commons.wikimedia.org/wiki/File:Virgil_Mosaic_Bardo_Museum_Tunis.jpg",
+        **overrides,
+    }
+    media = MediaRow(**values)
+    session.add(media)
+    session.flush()
+    return media
 
 
 def add_entity(
