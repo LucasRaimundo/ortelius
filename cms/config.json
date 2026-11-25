@@ -1421,7 +1421,7 @@
       },
       "license_version": {
         "meta": {
-          "interface": "input",
+          "interface": "select-dropdown",
           "sort": 6,
           "width": "half",
           "required": false,
@@ -1432,11 +1432,46 @@
             }
           ],
           "hidden": false,
-          "note": "Para CC BY e CC BY-SA, a versão indicada na origem (ex.: 4.0). Compõe o link da licença.",
+          "note": "Obrigatória para CC BY e CC BY-SA, como indicada na origem (ex.: 4.0); compõe o link da licença. Deixe vazia para domínio público e CC0.",
           "options": {
-            "placeholder": "4.0",
-            "trim": true
-          }
+            "choices": [
+              {
+                "text": "4.0",
+                "value": "4.0"
+              },
+              {
+                "text": "3.0",
+                "value": "3.0"
+              },
+              {
+                "text": "2.5",
+                "value": "2.5"
+              },
+              {
+                "text": "2.0",
+                "value": "2.0"
+              },
+              {
+                "text": "1.0",
+                "value": "1.0"
+              }
+            ],
+            "allowNone": true
+          },
+          "conditions": [
+            {
+              "name": "Sem versão",
+              "rule": {
+                "license": {
+                  "_in": [
+                    "public_domain",
+                    "cc0"
+                  ]
+                }
+              },
+              "hidden": true
+            }
+          ]
         }
       },
       "source_url": {

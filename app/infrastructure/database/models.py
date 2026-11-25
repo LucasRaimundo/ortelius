@@ -63,6 +63,12 @@ class MediaRow(_Timestamps, Base):
         CheckConstraint(_in_list("license", ImageLicense), name="license"),
         CheckConstraint("source_url ~ '^https?://'", name="source_url_format"),
         CheckConstraint(
+            "CASE WHEN license IN ('cc_by', 'cc_by_sa') "
+            "THEN license_version IS NOT NULL AND license_version IN ('1.0', '2.0', '2.5', '3.0', '4.0') "
+            "ELSE license_version IS NULL END",
+            name="license_version",
+        ),
+        CheckConstraint(
             "btrim(alt_text) <> '' AND btrim(caption) <> '' AND btrim(author) <> '' AND btrim(file_id) <> ''",
             name="texts_not_blank",
         ),

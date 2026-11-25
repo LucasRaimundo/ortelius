@@ -61,7 +61,10 @@ def db_session(db_engine: Engine) -> Iterator[Session]:
 
 
 def _test_settings(database_url: str) -> Settings:
-    return Settings(cors_allowed_origins=["http://localhost:3000"], database_url=SecretStr(database_url))
+    # Explícito: o .env de quem roda os testes pode configurar a pasta de imagens.
+    return Settings(
+        cors_allowed_origins=["http://localhost:3000"], database_url=SecretStr(database_url), media_root=None
+    )
 
 
 @pytest.fixture

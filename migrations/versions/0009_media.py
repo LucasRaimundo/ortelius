@@ -38,6 +38,13 @@ def upgrade() -> None:
             CONSTRAINT pk_media PRIMARY KEY (id),
             CONSTRAINT ck_media_license CHECK (license IN ('public_domain', 'cc0', 'cc_by', 'cc_by_sa')),
             CONSTRAINT ck_media_source_url_format CHECK (source_url ~ '^https?://'),
+            -- CC BY e CC BY-SA exigem link para a licença, que depende da versão; as outras não têm versão.
+            CONSTRAINT ck_media_license_version CHECK (
+                CASE WHEN license IN ('cc_by', 'cc_by_sa')
+                     THEN license_version IS NOT NULL AND license_version IN ('1.0', '2.0', '2.5', '3.0', '4.0')
+                     ELSE license_version IS NULL
+                END
+            ),
             CONSTRAINT ck_media_texts_not_blank CHECK (
                 btrim(alt_text) <> '' AND btrim(caption) <> '' AND btrim(author) <> '' AND btrim(file_id) <> ''
             )

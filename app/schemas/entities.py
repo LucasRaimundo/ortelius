@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from app.domain.entities import EntityType, SourceType
+from app.domain.entities import EntityType, ImageLicense, SourceType
 
 
 class TextRun(BaseModel):
@@ -99,6 +99,29 @@ class Source(BaseModel):
     locator: str | None
 
 
+class License(BaseModel):
+    code: ImageLicense
+    label: str
+    url: str | None
+
+
+class Rendition(BaseModel):
+    width: int
+    path: str = Field(description="Caminho na API, com a versão do arquivo; o conteúdo de um caminho nunca muda.")
+
+
+class Cover(BaseModel):
+    id: str
+    alt_text: str
+    caption: str
+    author: str
+    license: License
+    source_url: str
+    width: int = Field(description="Largura do original; com `height`, dá a proporção da imagem.")
+    height: int
+    renditions: list[Rendition] = Field(description="Tamanhos disponíveis, do menor para o maior.")
+
+
 class EntityDetail(BaseModel):
     id: str
     slug: str
@@ -106,7 +129,10 @@ class EntityDetail(BaseModel):
     entity_type: EntityType
     summary: str | None
     description: str | None
-    cover_media: str | None
+    cover_media: str | None = Field(
+        deprecated=True, description="Substituído por `cover`; sai depois que o frontend migrar."
+    )
+    cover: Cover | None
     location: PointLocation | None
     aliases: list[Alias]
     sections: list[Section]

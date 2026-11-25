@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.domain.entities import PublicationStatus
+from app.infrastructure.database.models import MediaRow
 
 
 @dataclass(frozen=True)
@@ -33,3 +34,27 @@ def find_published_cover_file(session: Session, media_id: uuid.UUID) -> CoverFil
     if row is None or row[1] is None or row[2] is None:
         return None
     return CoverFile(file_id=row[0], filename=row[1], modified_at=row[2])
+
+
+@dataclass(frozen=True)
+class CoverRecord:
+    media: MediaRow
+    width: int
+    height: int
+    modified_at: datetime
+
+
+_FILE_DETAILS = text("""
+    SELECT width, height, COALESCE(modified_on, uploaded_on) FROM directus.directus_files WHERE id::text = :file_id
+""")
+
+
+def find_cover(session: Session, media_id: uuid.UUID) -> CoverRecord | None:
+    """Capa com as dimensões do original; None se o arquivo sumiu do Directus ou não tem dimensões."""
+    media = session.get(MediaRow, media_id)
+    if media is None:
+        return None
+    row = session.execute(_FILE_DETAILS, {"file_id": media.file_id}).one_or_none()
+    if row is None or row[0] is None or row[1] is None or row[2] is None:
+        return None
+    return CoverRecord(media=media, width=row[0], height=row[1], modified_at=row[2])

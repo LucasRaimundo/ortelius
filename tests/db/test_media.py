@@ -10,9 +10,29 @@ from app.infrastructure.database.models import EntityRow
 from tests.factories import add_entity, add_media
 
 
-@pytest.mark.parametrize("license_", list(ImageLicense))
-def test_accepts_every_allowed_license(db_session: Session, license_: ImageLicense) -> None:
-    assert add_media(db_session, license=license_).license == license_
+@pytest.mark.parametrize(
+    ("license_", "version"),
+    [
+        (ImageLicense.PUBLIC_DOMAIN, None),
+        (ImageLicense.CC0, None),
+        (ImageLicense.CC_BY, "4.0"),
+        (ImageLicense.CC_BY_SA, "2.5"),
+    ],
+)
+def test_accepts_every_allowed_license(db_session: Session, license_: ImageLicense, version: str | None) -> None:
+    assert add_media(db_session, license=license_, license_version=version).license == license_
+
+
+@pytest.mark.parametrize(
+    ("license_", "version"),
+    [(ImageLicense.CC_BY, None), (ImageLicense.CC_BY_SA, "5.0"), (ImageLicense.PUBLIC_DOMAIN, "4.0")],
+    ids=["cc-by-sem-versao", "versao-inexistente", "dominio-publico-com-versao"],
+)
+def test_attribution_licenses_need_a_known_version_and_the_others_none(
+    db_session: Session, license_: ImageLicense, version: str | None
+) -> None:
+    with pytest.raises(IntegrityError, match="ck_media_license_version"):
+        add_media(db_session, license=license_, license_version=version)
 
 
 @pytest.mark.parametrize("license_", ["cc_by_nc", "cc_by_nd", "all_rights_reserved", "outra"])
