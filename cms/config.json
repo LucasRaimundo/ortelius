@@ -471,10 +471,42 @@
           "validation_message": "Longitude vai de -180 a 180 graus."
         }
       },
-      "wikidata_id": {
+      "start_year": {
         "meta": {
           "interface": "input",
           "sort": 11,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Início (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Nascimento, começo do evento ou fundação. Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 70 a.C. = -69)."
+        }
+      },
+      "end_year": {
+        "meta": {
+          "interface": "input",
+          "sort": 12,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Fim (ano)"
+            }
+          ],
+          "hidden": false,
+          "note": "Morte, fim do evento ou dissolução. Ano astronômico: d.C. normal (117 d.C. = 117); a.C. vira negativo somando 1 (1 a.C. = 0, 70 a.C. = -69)."
+        }
+      },
+      "wikidata_id": {
+        "meta": {
+          "interface": "input",
+          "sort": 13,
           "width": "half",
           "required": false,
           "translations": [
@@ -500,7 +532,7 @@
       "sections": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 12,
+          "sort": 14,
           "width": "full",
           "required": false,
           "translations": [
@@ -522,7 +554,7 @@
       "relations": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 13,
+          "sort": 15,
           "width": "full",
           "required": false,
           "translations": [
@@ -546,7 +578,7 @@
       "aliases": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 14,
+          "sort": 16,
           "width": "full",
           "required": false,
           "translations": [
@@ -569,7 +601,7 @@
       "citations": {
         "meta": {
           "interface": "list-m2m",
-          "sort": 15,
+          "sort": 17,
           "width": "full",
           "required": false,
           "translations": [
@@ -598,7 +630,7 @@
             "alias",
             "no-data"
           ],
-          "sort": 16,
+          "sort": 18,
           "width": "full",
           "required": false,
           "hidden": false,
@@ -613,7 +645,7 @@
       "draft_runs": {
         "meta": {
           "interface": "list-o2m",
-          "sort": 17,
+          "sort": 19,
           "width": "full",
           "required": false,
           "readonly": true,

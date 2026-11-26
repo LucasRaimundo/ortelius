@@ -95,6 +95,7 @@ class EntityRow(_Timestamps, Base):
         CheckConstraint("latitude BETWEEN -90 AND 90", name="latitude_range"),
         CheckConstraint("longitude BETWEEN -180 AND 180", name="longitude_range"),
         CheckConstraint("(latitude IS NULL) = (longitude IS NULL)", name="coordinates_together"),
+        CheckConstraint("start_year <= end_year", name="year_range"),
         Index("ix_entities_location", "location", postgresql_using="gist"),
     )
 
@@ -115,6 +116,9 @@ class EntityRow(_Timestamps, Base):
     # Espelho editável de `location`, sincronizado por trigger (migration 0008); a API lê só `location`.
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    # Ano astronômico (1 a.C. = 0), como em relações e nomes alternativos (app/domain/chronology.py).
+    start_year: Mapped[int | None] = mapped_column(Integer)
+    end_year: Mapped[int | None] = mapped_column(Integer)
 
 
 class EntityAliasRow(_Timestamps, Base):
