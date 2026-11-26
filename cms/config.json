@@ -343,26 +343,6 @@
           "note": "Apresentação geral no topo da página."
         }
       },
-      "cover_media": {
-        "meta": {
-          "interface": "file-image",
-          "sort": 7,
-          "width": "half",
-          "required": false,
-          "translations": [
-            {
-              "language": "pt-BR",
-              "translation": "Imagem de capa"
-            }
-          ],
-          "hidden": true,
-          "note": "Campo antigo, substituído por Imagem de capa. Será removido depois da migração das capas.",
-          "special": [
-            "file"
-          ],
-          "readonly": true
-        }
-      },
       "cover_id": {
         "meta": {
           "interface": "select-dropdown-m2o",
@@ -1823,10 +1803,6 @@
     }
   ],
   "file_relations": [
-    {
-      "collection": "entities",
-      "field": "cover_media"
-    },
     {
       "collection": "media",
       "field": "file_id"

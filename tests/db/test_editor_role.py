@@ -61,7 +61,7 @@ def test_editor_can_create_tables_in_directus_schema(db_session: Session) -> Non
     [
         "CREATE TABLE public.painel_criou (id int)",
         "ALTER TABLE entities ADD COLUMN painel_criou text",
-        "ALTER TABLE entities ADD CONSTRAINT painel_fk FOREIGN KEY (cover_media) REFERENCES sources (title)",
+        "ALTER TABLE entities ADD CONSTRAINT painel_fk FOREIGN KEY (summary) REFERENCES sources (title)",
         "DROP TABLE entity_aliases",
         "TRUNCATE entities",
     ],

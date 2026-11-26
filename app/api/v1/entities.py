@@ -84,7 +84,6 @@ def _to_detail(record: EntityRecord) -> EntityDetail:
         entity_type=EntityType(entity.entity_type),
         summary=entity.summary,
         description=entity.description,
-        cover_media=entity.cover_media,
         cover=_to_cover(record.cover) if record.cover else None,
         location=PointLocation(coordinates=record.location) if record.location else None,
         start_year=entity.start_year,

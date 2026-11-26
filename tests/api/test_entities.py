@@ -163,7 +163,7 @@ def test_entity_without_cover_has_null_cover(client: TestClient, db_session: Ses
     body = client.get("/v1/entities/roma").json()
 
     assert body["cover"] is None
-    assert body["cover_media"] is None
+    assert "cover_media" not in body
 
 
 def test_cover_carries_credit_license_and_sizes(client: TestClient, db_session: Session) -> None:

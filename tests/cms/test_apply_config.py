@@ -128,11 +128,11 @@ def test_plan_refuses_to_configure_a_column_missing_from_the_database() -> None:
 
 def test_plan_registers_file_relation_only_when_missing() -> None:
     state = applied_state()
-    del state.relations[("entities", "cover_media")]
+    del state.relations[("media", "file_id")]
 
     operations = plan(CONFIG, state)
 
-    assert [(op.method, op.body) for op in operations] == [("SQL", {"collection": "entities", "field": "cover_media"})]
+    assert [(op.method, op.body) for op in operations] == [("SQL", {"collection": "media", "field": "file_id"})]
 
 
 def test_every_domain_column_is_configured_for_the_panel() -> None:

@@ -106,8 +106,6 @@ class EntityRow(_Timestamps, Base):
     summary: Mapped[str | None] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(24), server_default=PublicationStatus.DRAFT.value)
-    # Substituída por `cover_id`; sai depois que as capas atuais forem migradas (migration 0009).
-    cover_media: Mapped[str | None] = mapped_column(Text)
     cover_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"), index=True)
     location: Mapped[WKBElement | WKTElement | None] = mapped_column(
         Geometry("POINT", srid=4326, spatial_index=False), nullable=True

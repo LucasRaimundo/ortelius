@@ -129,9 +129,6 @@ class EntityDetail(BaseModel):
     entity_type: EntityType
     summary: str | None
     description: str | None
-    cover_media: str | None = Field(
-        deprecated=True, description="Substituído por `cover`; sai depois que o frontend migrar."
-    )
     cover: Cover | None
     location: PointLocation | None
     start_year: int | None = Field(
