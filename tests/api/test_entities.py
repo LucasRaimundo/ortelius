@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from geoalchemy2 import WKTElement
 from sqlalchemy.orm import Session
 
+from app.domain.chronology import Era, to_astronomical_year
 from app.domain.entities import EntityType, ImageLicense, PublicationStatus
 from app.domain.media import file_version
 from app.infrastructure.database.models import EntityAliasRow
@@ -52,6 +53,19 @@ def test_entity_without_location_has_null_location(client: TestClient, db_sessio
     add_entity(db_session, "eneida", entity_type=EntityType.WORK)
 
     assert client.get("/v1/entities/eneida").json()["location"] is None
+
+
+def test_entity_dates_are_astronomical_years(client: TestClient, db_session: Session) -> None:
+    virgilio = add_entity(db_session, "virgilio", entity_type=EntityType.PERSON)
+    virgilio.start_year = to_astronomical_year(70, Era.BCE)
+    virgilio.end_year = to_astronomical_year(19, Era.BCE)
+    add_entity(db_session, "eneida", entity_type=EntityType.WORK)
+    db_session.flush()
+
+    body = client.get("/v1/entities/virgilio").json()
+    assert (body["start_year"], body["end_year"]) == (-69, -18)
+    undated = client.get("/v1/entities/eneida").json()
+    assert (undated["start_year"], undated["end_year"]) == (None, None)
 
 
 @pytest.mark.parametrize("status", [PublicationStatus.DRAFT, PublicationStatus.ARCHIVED])

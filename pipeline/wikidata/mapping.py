@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
+from app.domain.chronology import Era, to_astronomical_year
 from app.domain.entities import EntityType
 
 ALIAS_LANGUAGES = ("pt", "la", "en", "grc", "el", "it", "es", "fr", "de")
@@ -48,6 +49,24 @@ TYPE_BY_INSTANCE: Mapping[str, EntityType] = {
     "Q41710": EntityType.CULTURE,
     "Q151885": EntityType.CONCEPT,
 }
+
+
+# Propriedades de data por tipo, em ordem de preferência: a primeira que tiver valor utilizável vale.
+# Evento com uma data só (P585, "momento") começa e termina no mesmo ano.
+START_PROPERTIES: Mapping[EntityType, tuple[str, ...]] = {
+    EntityType.PERSON: ("P569",),
+    EntityType.EVENT: ("P580", "P585", "P571"),
+    EntityType.STATE: ("P580", "P571"),
+}
+END_PROPERTIES: Mapping[EntityType, tuple[str, ...]] = {
+    EntityType.PERSON: ("P570",),
+    EntityType.EVENT: ("P582", "P585", "P576"),
+    EntityType.STATE: ("P582", "P576"),
+}
+YEAR_PRECISION = 9
+# Qualificadores que marcam a data como incerta: "circunstância da informação" (cerca de, provavelmente…),
+# "data mais antiga" e "data mais recente". Datas aproximadas ficam para o revisor.
+UNCERTAINTY_QUALIFIERS = ("P1480", "P1319", "P1326")
 
 
 @dataclass(frozen=True)
@@ -96,6 +115,8 @@ class ItemFacts:
     entity_type: EntityType
     summary: str | None
     location: tuple[float, float] | None
+    start_year: int | None
+    end_year: int | None
     aliases: tuple[Alias, ...]
     relations: tuple[RelationFact, ...]
     points_to_check: tuple[str, ...]
@@ -123,6 +144,7 @@ def _facts_from_item(item: Mapping[str, Any], forced_type: EntityType | None) ->
         points.append(f"Nome em inglês ({name}): o item não tem rótulo em português.")
     entity_type = forced_type or _entity_type(qid, item["claims"], points)
     location = _location(item["claims"], points)
+    start_year, end_year = _years(item["claims"], entity_type, points)
     return ItemFacts(
         qid=qid,
         revision=int(item["lastrevid"]),
@@ -130,6 +152,8 @@ def _facts_from_item(item: Mapping[str, Any], forced_type: EntityType | None) ->
         entity_type=entity_type,
         summary=_text(item["descriptions"], "pt"),
         location=location,
+        start_year=start_year,
+        end_year=end_year,
         aliases=_aliases(item, name),
         relations=_relations(item["claims"]),
         points_to_check=tuple(points),
@@ -177,6 +201,48 @@ def _location(claims: Mapping[str, Any], points: list[str]) -> tuple[float, floa
     if len(coordinates) > 1:
         points.append(f"O Wikidata tem {len(coordinates)} coordenadas; foi usada a primeira. Confira o ponto no mapa.")
     return float(coordinates[0]["longitude"]), float(coordinates[0]["latitude"])
+
+
+def _years(claims: Mapping[str, Any], entity_type: EntityType, points: list[str]) -> tuple[int | None, int | None]:
+    start = _year(claims, START_PROPERTIES.get(entity_type, ()), "início", points)
+    end = _year(claims, END_PROPERTIES.get(entity_type, ()), "fim", points)
+    if start is not None and end is not None and start > end:
+        points.append(f"Datas descartadas: o Wikidata dá fim ({end}) antes do início ({start}), em ano astronômico.")
+        return None, None
+    return start, end
+
+
+def _year(claims: Mapping[str, Any], properties: tuple[str, ...], label: str, points: list[str]) -> int | None:
+    """Ano astronômico da primeira propriedade com data exata ao menos no ano; os preferidos primeiro."""
+    for property_id in properties:
+        statements = _statements(claims, property_id)
+        years = [year for statement in statements if (year := _exact_year(statement)) is not None]
+        if years:
+            if len(set(years)) > 1:
+                others = ", ".join(str(year) for year in dict.fromkeys(years[1:]) if year != years[0])
+                points.append(f"Ano de {label}: usado {years[0]} ({property_id}); o Wikidata também tem {others}.")
+            return years[0]
+        if statements:
+            points.append(
+                f"Ano de {label} sem valor exato no Wikidata ({property_id}): só data aproximada ou imprecisa."
+            )
+    return None
+
+
+def _exact_year(statement: Mapping[str, Any]) -> int | None:
+    """Converte o ano do Wikidata, que não tem ano zero (-0070 é 70 a.C.), para ano astronômico (-69)."""
+    if any(qualifier in statement.get("qualifiers", {}) for qualifier in UNCERTAINTY_QUALIFIERS):
+        return None
+    value = statement["mainsnak"]["datavalue"]["value"]
+    if value["precision"] < YEAR_PRECISION:
+        return None
+    match = re.fullmatch(r"([+-])(\d+)-\d\d-\d\dT.*", value["time"])
+    if match is None:
+        raise ValueError(f"data do Wikidata em formato desconhecido: {value['time']!r}")
+    year = int(match[2])
+    if year == 0:
+        return None
+    return to_astronomical_year(year, Era.BCE if match[1] == "-" else Era.CE)
 
 
 def _aliases(item: Mapping[str, Any], name: str) -> tuple[Alias, ...]:
