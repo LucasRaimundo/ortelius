@@ -134,6 +134,10 @@ class EntityDetail(BaseModel):
     )
     cover: Cover | None
     location: PointLocation | None
+    start_year: int | None = Field(
+        description="Ano astronômico (1 a.C. = 0): nascimento, começo do evento ou fundação."
+    )
+    end_year: int | None = Field(description="Ano astronômico (1 a.C. = 0): morte, fim do evento ou dissolução.")
     aliases: list[Alias]
     sections: list[Section]
     relations: list[Relation]
