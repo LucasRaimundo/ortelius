@@ -48,6 +48,23 @@
         "note": "Biblioteca Central: cada fonte é cadastrada uma vez e citada por várias entidades."
       }
     },
+    "media": {
+      "meta": {
+        "icon": "image",
+        "display_template": "{{caption}}",
+        "hidden": false,
+        "translations": [
+          {
+            "language": "pt-BR",
+            "translation": "Imagens",
+            "singular": "Imagem",
+            "plural": "Imagens"
+          }
+        ],
+        "sort": 3,
+        "note": "Imagens com crédito: cada uma é cadastrada uma vez e pode ser capa de várias entidades."
+      }
+    },
     "relation_types": {
       "meta": {
         "icon": "share",
@@ -61,7 +78,7 @@
             "plural": "Tipos de relação"
           }
         ],
-        "sort": 3,
+        "sort": 4,
         "note": "Vocabulário das relações entre entidades (ex.: \"participou de\")."
       }
     },
@@ -138,7 +155,7 @@
             "plural": "Execuções do pipeline"
           }
         ],
-        "sort": 4,
+        "sort": 5,
         "note": "Execuções do pipeline: o que veio do Wikidata e do modelo, com os pontos a conferir. Somente leitura."
       }
     },
@@ -338,11 +355,33 @@
               "translation": "Imagem de capa"
             }
           ],
-          "hidden": false,
-          "note": "Registre a licença e a atribuição da imagem nas fontes.",
+          "hidden": true,
+          "note": "Campo antigo, substituído por Imagem de capa. Será removido depois da migração das capas.",
           "special": [
             "file"
-          ]
+          ],
+          "readonly": true
+        }
+      },
+      "cover_id": {
+        "meta": {
+          "interface": "select-dropdown-m2o",
+          "sort": 7,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Imagem de capa"
+            }
+          ],
+          "hidden": false,
+          "note": "Escolha uma imagem já cadastrada ou crie uma nova com autor, licença e página de origem.",
+          "options": {
+            "template": "{{caption}}",
+            "enableCreate": true,
+            "enableSelect": true
+          }
         }
       },
       "location": {
@@ -1266,6 +1305,195 @@
         }
       }
     },
+    "media": {
+      "file_id": {
+        "meta": {
+          "interface": "file-image",
+          "sort": 1,
+          "width": "full",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Arquivo"
+            }
+          ],
+          "hidden": false,
+          "note": "JPEG, PNG ou WebP. Prefira o original em boa resolução (ao menos 1600 px de largura); o Atlas gera os tamanhos menores.",
+          "special": [
+            "file"
+          ]
+        }
+      },
+      "caption": {
+        "meta": {
+          "interface": "input",
+          "sort": 2,
+          "width": "full",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Legenda"
+            }
+          ],
+          "hidden": false,
+          "note": "O que a imagem mostra, como aparece sob ela na página. Ex.: Mosaico de Virgílio entre Clio e Melpômene (Museu do Bardo, Túnis).",
+          "options": {
+            "trim": true
+          }
+        }
+      },
+      "alt_text": {
+        "meta": {
+          "interface": "input",
+          "sort": 3,
+          "width": "full",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Texto alternativo"
+            }
+          ],
+          "hidden": false,
+          "note": "Descreve a imagem para quem não a vê (leitor de tela). Diga o que está na cena, não repita a legenda.",
+          "options": {
+            "trim": true
+          }
+        }
+      },
+      "author": {
+        "meta": {
+          "interface": "input",
+          "sort": 4,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Autor"
+            }
+          ],
+          "hidden": false,
+          "note": "Como a página de origem atribui a obra. Em domínio público, o autor original ou \"Desconhecido\".",
+          "options": {
+            "trim": true
+          }
+        }
+      },
+      "license": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 5,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Licença"
+            }
+          ],
+          "hidden": false,
+          "note": "Confira na página de origem. Licenças NC (não comercial), ND (sem derivações) ou com direitos reservados não podem ser usadas: procure outra imagem.",
+          "options": {
+            "choices": [
+              {
+                "text": "Domínio público",
+                "value": "public_domain"
+              },
+              {
+                "text": "CC0",
+                "value": "cc0"
+              },
+              {
+                "text": "CC BY (com atribuição)",
+                "value": "cc_by"
+              },
+              {
+                "text": "CC BY-SA (atribuição e mesma licença)",
+                "value": "cc_by_sa"
+              }
+            ],
+            "allowNone": false
+          }
+        }
+      },
+      "license_version": {
+        "meta": {
+          "interface": "select-dropdown",
+          "sort": 6,
+          "width": "half",
+          "required": false,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Versão da licença"
+            }
+          ],
+          "hidden": false,
+          "note": "Obrigatória para CC BY e CC BY-SA, como indicada na origem (ex.: 4.0); compõe o link da licença. Deixe vazia para domínio público e CC0.",
+          "options": {
+            "choices": [
+              {
+                "text": "4.0",
+                "value": "4.0"
+              },
+              {
+                "text": "3.0",
+                "value": "3.0"
+              },
+              {
+                "text": "2.5",
+                "value": "2.5"
+              },
+              {
+                "text": "2.0",
+                "value": "2.0"
+              },
+              {
+                "text": "1.0",
+                "value": "1.0"
+              }
+            ],
+            "allowNone": true
+          },
+          "conditions": [
+            {
+              "name": "Sem versão",
+              "rule": {
+                "license": {
+                  "_in": [
+                    "public_domain",
+                    "cc0"
+                  ]
+                }
+              },
+              "hidden": true
+            }
+          ]
+        }
+      },
+      "source_url": {
+        "meta": {
+          "interface": "input",
+          "sort": 7,
+          "width": "half",
+          "required": true,
+          "translations": [
+            {
+              "language": "pt-BR",
+              "translation": "Página de origem"
+            }
+          ],
+          "hidden": false,
+          "note": "Link da página onde a imagem e a licença aparecem (ex.: o arquivo no Wikimedia Commons), não o link direto do JPEG.",
+          "options": {
+            "trim": true
+          }
+        }
+      }
+    },
     "entity_sources": {
       "entity_id": {
         "meta": {
@@ -1552,12 +1780,24 @@
       "meta": {
         "one_field": "draft_runs"
       }
+    },
+    {
+      "collection": "entities",
+      "field": "cover_id",
+      "meta": {
+        "one_field": null,
+        "one_deselect_action": "nullify"
+      }
     }
   ],
   "file_relations": [
     {
       "collection": "entities",
       "field": "cover_media"
+    },
+    {
+      "collection": "media",
+      "field": "file_id"
     }
   ],
   "policies": {
@@ -1600,6 +1840,12 @@
           "delete"
         ],
         "sources": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "media": [
           "create",
           "read",
           "update",

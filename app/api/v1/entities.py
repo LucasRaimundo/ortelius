@@ -5,16 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
 from app.domain import content
-from app.domain.entities import EntityType, SourceType
+from app.domain.entities import EntityType, ImageLicense, SourceType
+from app.domain.media import file_version, license_info, rendition_for, rendition_widths
 from app.infrastructure.database.engine import get_session
 from app.infrastructure.database.models import SLUG_PATTERN, EntitySectionRow
 from app.infrastructure.editorjs import to_blocks
 from app.repositories.entities import EntityRecord, RelationRecord, find_published_entity
+from app.repositories.media import CoverRecord
 from app.schemas.entities import (
     Alias,
     ContentBlock,
+    Cover,
     EntityDetail,
     HeadingBlock,
+    License,
     ListBlock,
     ListItem,
     ParagraphBlock,
@@ -22,6 +26,7 @@ from app.schemas.entities import (
     QuoteBlock,
     RelatedEntity,
     Relation,
+    Rendition,
     Section,
     Source,
     TextRun,
@@ -49,6 +54,27 @@ def get_entity(
     return _to_detail(record)
 
 
+def _to_cover(record: CoverRecord) -> Cover:
+    media = record.media
+    license_ = ImageLicense(media.license)
+    info = license_info(license_, media.license_version)
+    version = file_version(media.file_id, record.modified_at)
+    return Cover(
+        id=str(media.id),
+        alt_text=media.alt_text,
+        caption=media.caption,
+        author=media.author,
+        license=License(code=license_, label=info.label, url=info.url),
+        source_url=media.source_url,
+        width=record.width,
+        height=record.height,
+        renditions=[
+            Rendition(width=width, path=f"/v1/media/{media.id}/{rendition_for(width)}.webp?v={version}")
+            for width in rendition_widths(record.width)
+        ],
+    )
+
+
 def _to_detail(record: EntityRecord) -> EntityDetail:
     entity = record.entity
     return EntityDetail(
@@ -59,6 +85,7 @@ def _to_detail(record: EntityRecord) -> EntityDetail:
         summary=entity.summary,
         description=entity.description,
         cover_media=entity.cover_media,
+        cover=_to_cover(record.cover) if record.cover else None,
         location=PointLocation(coordinates=record.location) if record.location else None,
         aliases=[
             Alias(

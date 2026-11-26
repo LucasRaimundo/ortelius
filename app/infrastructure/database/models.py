@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
-from app.domain.entities import DraftRunKind, EntityType, PublicationStatus, SourceType, TextLicense
+from app.domain.entities import DraftRunKind, EntityType, ImageLicense, PublicationStatus, SourceType, TextLicense
 
 NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s",
@@ -55,6 +55,35 @@ def _uuid_pk() -> Mapped[uuid.UUID]:
     return mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
 
 
+class MediaRow(_Timestamps, Base):
+    """Imagem usada pelo Atlas, com procedência obrigatória. O arquivo mora no Directus (`file_id`, sem FK)."""
+
+    __tablename__ = "media"
+    __table_args__ = (
+        CheckConstraint(_in_list("license", ImageLicense), name="license"),
+        CheckConstraint("source_url ~ '^https?://'", name="source_url_format"),
+        CheckConstraint(
+            "CASE WHEN license IN ('cc_by', 'cc_by_sa') "
+            "THEN license_version IS NOT NULL AND license_version IN ('1.0', '2.0', '2.5', '3.0', '4.0') "
+            "ELSE license_version IS NULL END",
+            name="license_version",
+        ),
+        CheckConstraint(
+            "btrim(alt_text) <> '' AND btrim(caption) <> '' AND btrim(author) <> '' AND btrim(file_id) <> ''",
+            name="texts_not_blank",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    file_id: Mapped[str] = mapped_column(Text)
+    alt_text: Mapped[str] = mapped_column(String(300))
+    caption: Mapped[str] = mapped_column(String(300))
+    author: Mapped[str] = mapped_column(String(200))
+    license: Mapped[str] = mapped_column(String(24))
+    license_version: Mapped[str | None] = mapped_column(String(8))
+    source_url: Mapped[str] = mapped_column(Text)
+
+
 class EntityRow(_Timestamps, Base):
     __tablename__ = "entities"
     __table_args__ = (
@@ -76,7 +105,9 @@ class EntityRow(_Timestamps, Base):
     summary: Mapped[str | None] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(24), server_default=PublicationStatus.DRAFT.value)
+    # Substituída por `cover_id`; sai depois que as capas atuais forem migradas (migration 0009).
     cover_media: Mapped[str | None] = mapped_column(Text)
+    cover_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"), index=True)
     location: Mapped[WKBElement | WKTElement | None] = mapped_column(
         Geometry("POINT", srid=4326, spatial_index=False), nullable=True
     )

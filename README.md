@@ -25,6 +25,16 @@ cms/create-dev-role.sh                # cria o usuário de login `directus`, mem
 docker compose --profile cms up -d    # painel em http://localhost:8055
 ```
 
+Os arquivos enviados pelo painel ficam em `var/uploads/` (fora do git). Crie a pasta antes de subir o Directus;
+se o Docker a criar, ela fica com dono `root` e o painel não consegue gravar:
+
+```bash
+mkdir -p var/uploads
+```
+
+Imagens exibidas no Atlas são cadastradas em **Imagens**, com autor, licença e página de origem
+obrigatórios no banco (migration `0009`); só domínio público, CC0, CC BY e CC BY-SA são aceitas.
+
 Configuração do painel (rótulos, campos, relações) vive em `cms/config.json` e é aplicada pela API do
 Directus, alterando só o que difere:
 

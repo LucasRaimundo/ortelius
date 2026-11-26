@@ -44,8 +44,9 @@ services:
       # Não envia e-mail e organização do dono do projeto, mesmo se alguém preencher o formulário no painel.
       PROJECT_OWNER_ENABLED: "false"
     volumes:
-      - directus_uploads:/directus/uploads
+      # Pasta do host, não volume nomeado: a API, rodando fora do Docker, lê os originais daqui para servir as
+      # capas (MEDIA_ROOT). Fora do ambiente local, o armazenamento é decidido com a hospedagem (fase 8).
+      - ./var/uploads:/directus/uploads
 
 volumes:
   pgdata:
-  directus_uploads:

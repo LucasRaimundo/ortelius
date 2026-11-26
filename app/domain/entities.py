@@ -37,6 +37,15 @@ class TextLicense(StrEnum):
     CC_BY = "cc_by"
 
 
+class ImageLicense(StrEnum):
+    """Licenças aceitas para imagens exibidas no Atlas: permitem uso comercial futuro e exigem no máximo atribuição."""
+
+    PUBLIC_DOMAIN = "public_domain"
+    CC0 = "cc0"
+    CC_BY = "cc_by"
+    CC_BY_SA = "cc_by_sa"
+
+
 class DraftRunKind(StrEnum):
     WIKIDATA = "wikidata"
     TEXT = "text"

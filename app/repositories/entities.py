@@ -14,6 +14,7 @@ from app.infrastructure.database.models import (
     RelationTypeRow,
     SourceRow,
 )
+from app.repositories.media import CoverRecord, find_cover
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class EntityRecord:
     sections: list[EntitySectionRow]
     relations: list[RelationRecord]
     sources: list[tuple[EntitySourceRow, SourceRow]]
+    cover: CoverRecord | None
 
 
 def find_published_entity(session: Session, slug: str) -> EntityRecord | None:
@@ -65,6 +67,7 @@ def find_published_entity(session: Session, slug: str) -> EntityRecord | None:
         sections=list(sections),
         relations=_published_relations(session, entity),
         sources=list(sources),
+        cover=find_cover(session, entity.cover_id) if entity.cover_id else None,
     )
 
 

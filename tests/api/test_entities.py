@@ -1,13 +1,22 @@
 import logging
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
 from geoalchemy2 import WKTElement
 from sqlalchemy.orm import Session
 
-from app.domain.entities import EntityType, PublicationStatus
+from app.domain.entities import EntityType, ImageLicense, PublicationStatus
+from app.domain.media import file_version
 from app.infrastructure.database.models import EntityAliasRow
-from tests.factories import add_entity, add_section, relate
+from tests.factories import (
+    add_directus_file,
+    add_entity,
+    add_media,
+    add_section,
+    ensure_directus_files_table,
+    relate,
+)
 
 
 def test_returns_published_entity_page(client: TestClient, db_session: Session) -> None:
@@ -132,3 +141,67 @@ def test_section_content_uses_typed_blocks_and_never_exposes_html(client: TestCl
     plain = {"bold": False, "italic": False, "href": None}
     assert content[2]["items"] == [{"text": [{"text": "Reino", **plain}], "items": []}]
     assert content[3]["caption"] == "Suetônio"
+
+
+def test_entity_without_cover_has_null_cover(client: TestClient, db_session: Session) -> None:
+    add_entity(db_session, "roma")
+
+    body = client.get("/v1/entities/roma").json()
+
+    assert body["cover"] is None
+    assert body["cover_media"] is None
+
+
+def test_cover_carries_credit_license_and_sizes(client: TestClient, db_session: Session) -> None:
+    modified = datetime(2026, 11, 25, 12, 0, tzinfo=UTC)
+    file_id = add_directus_file(db_session, "capa.jpg", modified_on=modified, width=2000, height=1000)
+    media = add_media(db_session, file_id=file_id, license=ImageLicense.CC_BY_SA, license_version="4.0")
+    roma = add_entity(db_session, "roma")
+    roma.cover_id = media.id
+    db_session.flush()
+
+    cover = client.get("/v1/entities/roma").json()["cover"]
+
+    version = file_version(file_id, modified)
+    assert cover == {
+        "id": str(media.id),
+        "alt_text": media.alt_text,
+        "caption": media.caption,
+        "author": "David Bjorgen",
+        "license": {
+            "code": "cc_by_sa",
+            "label": "CC BY-SA 4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        },
+        "source_url": media.source_url,
+        "width": 2000,
+        "height": 1000,
+        "renditions": [
+            {"width": width, "path": f"/v1/media/{media.id}/{width}.webp?v={version}"} for width in (480, 960, 1600)
+        ],
+    }
+
+
+def test_small_cover_lists_only_sizes_up_to_the_original(client: TestClient, db_session: Session) -> None:
+    file_id = add_directus_file(db_session, "capa.jpg", width=600, height=400)
+    media = add_media(db_session, file_id=file_id)
+    roma = add_entity(db_session, "roma")
+    roma.cover_id = media.id
+    db_session.flush()
+
+    renditions = client.get("/v1/entities/roma").json()["cover"]["renditions"]
+
+    assert [(r["width"], r["path"].split("?")[0].rsplit("/", 1)[1]) for r in renditions] == [
+        (480, "480.webp"),
+        (600, "960.webp"),
+    ]
+
+
+def test_cover_whose_file_left_the_panel_is_omitted(client: TestClient, db_session: Session) -> None:
+    ensure_directus_files_table(db_session)
+    media = add_media(db_session, file_id="00000000-0000-4000-8000-00000000dead")
+    roma = add_entity(db_session, "roma")
+    roma.cover_id = media.id
+    db_session.flush()
+
+    assert client.get("/v1/entities/roma").json()["cover"] is None
