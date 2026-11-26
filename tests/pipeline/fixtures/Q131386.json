@@ -206,6 +206,54 @@
       "type": "statement",
       "rank": "normal"
      }
+    ],
+    "P580": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P580",
+       "hash": "ad297a724250cfed8cf448ef0f194c347f25090e",
+       "datavalue": {
+        "value": {
+         "time": "-0052-07-01T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 10,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q131386$aa97f08b-4aed-f817-138f-a229a99eccdb",
+      "rank": "normal"
+     }
+    ],
+    "P582": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P582",
+       "hash": "47a366753eec51529d8be08c0011dd8554e3e407",
+       "datavalue": {
+        "value": {
+         "time": "-0052-09-01T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 10,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q131386$2401a25e-4496-df57-609a-6a29f7987a0b",
+      "rank": "normal"
+     }
     ]
    }
   }

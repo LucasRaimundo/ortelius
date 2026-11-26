@@ -432,6 +432,98 @@
       "type": "statement",
       "rank": "normal"
      }
+    ],
+    "P569": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P569",
+       "hash": "27a24122022e6604ce47b8c6fea609d58364a7f5",
+       "datavalue": {
+        "value": {
+         "time": "-0063-00-00T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 9,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q1405$4d08c813-4c25-0795-5e35-c850192b0b16",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P569",
+       "hash": "13be8ea68dbe08f5db3c4954a992bfd8208605a2",
+       "datavalue": {
+        "value": {
+         "time": "-0063-09-23T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 11,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q1405$69bd812d-4fb8-8dbc-1f74-4620f5bd2e61",
+      "rank": "preferred"
+     }
+    ],
+    "P570": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P570",
+       "hash": "07260bc8443b11b72d13b5eb39f835c198b2d9e2",
+       "datavalue": {
+        "value": {
+         "time": "+0014-08-19T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 11,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q1405$0C1CF3E7-8848-4E24-87AE-A8371146E378",
+      "rank": "preferred"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P570",
+       "hash": "34a77acaf27012f799174ffcf98f873371e6992a",
+       "datavalue": {
+        "value": {
+         "time": "+0014-00-00T00:00:00Z",
+         "timezone": 0,
+         "before": 0,
+         "after": 0,
+         "precision": 9,
+         "calendarmodel": "http://www.wikidata.org/entity/Q1985786"
+        },
+        "type": "time"
+       },
+       "datatype": "time"
+      },
+      "type": "statement",
+      "id": "Q1405$21CF136B-DB56-4BC1-B22C-D22C041D4B33",
+      "rank": "normal"
+     }
     ]
    }
   }

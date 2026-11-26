@@ -142,6 +142,36 @@ def test_running_again_on_a_draft_keeps_reviewer_edits_and_does_not_duplicate(db
     assert count(db_session, EntityDraftRunRow, alesia) == 2
 
 
+def test_new_draft_gets_dates_and_a_draft_only_gets_its_empty_dates(db_session: Session, run: Any) -> None:
+    run("Q1405")
+    augusto = by_qid(db_session, "Q1405")
+    assert (augusto.start_year, augusto.end_year) == (-62, 14)
+    augusto.start_year = -63  # o revisor corrigiu o nascimento e apagou a morte
+    augusto.end_year = None
+    db_session.flush()
+
+    run("Q1405")
+
+    db_session.refresh(augusto)
+    assert (augusto.start_year, augusto.end_year) == (-63, 14)
+    # Os dois registros nascem na mesma transação do teste, com o mesmo horário: a ordem não é confiável.
+    runs = db_session.scalars(select(EntityDraftRunRow).where(EntityDraftRunRow.entity_id == augusto.id))
+    assert ["end_year"] in [run.details["fields_filled"] for run in runs]
+
+
+def test_never_fills_a_year_that_contradicts_the_reviewer(db_session: Session, run: Any) -> None:
+    run("Q1405")
+    augusto = by_qid(db_session, "Q1405")
+    augusto.start_year = 20
+    augusto.end_year = None
+    db_session.flush()
+
+    run("Q1405")
+
+    db_session.refresh(augusto)
+    assert (augusto.start_year, augusto.end_year) == (20, None)
+
+
 def test_never_touches_an_entity_that_left_draft(db_session: Session, run: Any) -> None:
     eneida = existing(db_session, "eneida", "Q60220")
 

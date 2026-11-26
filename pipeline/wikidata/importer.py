@@ -77,7 +77,8 @@ def import_facts(session: Session, facts: ItemFacts, *, slug: str | None = None)
     if entity is None:
         entity = _create_entity(session, facts, slug or slugify(facts.name))
         outcome = Outcome.CREATED
-        filled = ["name", "entity_type"] + [field for field in ("summary", "location") if getattr(facts, field)]
+        optional = ("summary", "location", "start_year", "end_year")
+        filled = ["name", "entity_type"] + [field for field in optional if getattr(facts, field) is not None]
     else:
         outcome, filled = Outcome.COMPLETED, _fill_empty_fields(entity, facts)
 
@@ -118,6 +119,8 @@ def _create_entity(session: Session, facts: ItemFacts, slug: str) -> EntityRow:
         status=PublicationStatus.DRAFT,
         summary=facts.summary,
         location=_point(facts),
+        start_year=facts.start_year,
+        end_year=facts.end_year,
         wikidata_id=facts.qid,
     )
     session.add(entity)
@@ -133,6 +136,23 @@ def _fill_empty_fields(entity: EntityRow, facts: ItemFacts) -> list[str]:
     if entity.location is None and facts.location is not None:
         entity.location = _point(facts)
         filled.append("location")
+    filled += fill_empty_years(entity, facts)
+    return filled
+
+
+def fill_empty_years(entity: EntityRow, facts: ItemFacts) -> list[str]:
+    """Preenche início e fim vazios; não grava um ano que contradiga o outro já definido pelo revisor."""
+    start = entity.start_year if entity.start_year is not None else facts.start_year
+    end = entity.end_year if entity.end_year is not None else facts.end_year
+    if start is not None and end is not None and start > end:
+        return []
+    filled: list[str] = []
+    if entity.start_year is None and start is not None:
+        entity.start_year = start
+        filled.append("start_year")
+    if entity.end_year is None and end is not None:
+        entity.end_year = end
+        filled.append("end_year")
     return filled
 
 
