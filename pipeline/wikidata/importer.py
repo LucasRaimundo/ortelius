@@ -141,19 +141,24 @@ def _fill_empty_fields(entity: EntityRow, facts: ItemFacts) -> list[str]:
 
 
 def fill_empty_years(entity: EntityRow, facts: ItemFacts) -> list[str]:
-    """Preenche início e fim vazios; não grava um ano que contradiga o outro já definido pelo revisor."""
+    years = empty_years_to_fill(entity, facts)
+    for field, year in years.items():
+        setattr(entity, field, year)
+    return list(years)
+
+
+def empty_years_to_fill(entity: EntityRow, facts: ItemFacts) -> dict[str, int]:
+    """Início e fim que estão vazios e o Wikidata tem; nada que contradiga o outro ano já definido pelo revisor."""
     start = entity.start_year if entity.start_year is not None else facts.start_year
     end = entity.end_year if entity.end_year is not None else facts.end_year
     if start is not None and end is not None and start > end:
-        return []
-    filled: list[str] = []
+        return {}
+    years: dict[str, int] = {}
     if entity.start_year is None and start is not None:
-        entity.start_year = start
-        filled.append("start_year")
+        years["start_year"] = start
     if entity.end_year is None and end is not None:
-        entity.end_year = end
-        filled.append("end_year")
-    return filled
+        years["end_year"] = end
+    return years
 
 
 def _point(facts: ItemFacts) -> WKTElement | None:
